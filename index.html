@@ -380,8 +380,8 @@
   @media (max-width: 400px) {
     .slot { width: clamp(36px,12vw,48px); height: clamp(42px,14vw,54px); font-size: 22px; }
     .num-tile { width: clamp(34px,11vw,44px); height: clamp(38px,12vw,48px); font-size: 18px; }
-    .arena-side .poke-img { width: clamp(55px,14vw,80px); height: clamp(55px,14vw,80px); }
-    .arena-side .rocket-img { width: clamp(48px,12vw,70px); height: clamp(48px,12vw,70px); }
+    .arena-side .poke-img { width: clamp(120px,28vw,180px); height: clamp(120px,28vw,180px); }
+    .arena-side .rocket-img { width: clamp(90px,22vw,140px); height: clamp(90px,22vw,140px); }
   }
 </style>
 </head>
@@ -612,8 +612,14 @@ function pickNewPokemon(callback) {
       document.getElementById(m.id).classList.remove('blast','hit');
     });
 
-    // Intro animation: Pokemon "contra" Team Rocket → then all 3 TR members
-    showIntro('assets/' + currentPoke.file, currentPoke.name + ' contra Team Rocket!', 1800, function() {
+    // Intro: Pokemon → "contra" → Team Rocket
+    showIntro('assets/' + currentPoke.file, currentPoke.name, 1800, function() {
+      // Speak "contra" in PT between characters
+      if (window.speechSynthesis) {
+        var u = new SpeechSynthesisUtterance('contra');
+        u.lang = 'pt-PT'; u.rate = 0.85; u.pitch = 1.0;
+        window.speechSynthesis.speak(u);
+      }
       document.getElementById('pokeSide').style.opacity = '0';
       document.getElementById('rocketSide').style.opacity = '0';
     
