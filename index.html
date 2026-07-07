@@ -35,112 +35,167 @@
     min-height: 16px;
   }
 
-  /* Arena */
+  /* Arena - transparent bg */
   .arena {
     flex-shrink: 0;
-    height: clamp(100px, 22vw, 160px);
+    height: clamp(120px, 26vw, 180px);
     position: relative;
     margin: 0 8px;
-    background: linear-gradient(180deg, #2d3436, #636e72);
-    border-radius: 12px;
-    border: 2px solid #4a4a5a;
-    overflow: hidden;
     z-index: 2;
-  }
-  .arena-bg {
-    position: absolute; inset: 0;
-    background: repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.02) 40px, rgba(255,255,255,0.02) 41px);
   }
 
   .arena-side {
     position: absolute;
-    bottom: 4px;
+    bottom: 0;
     display: flex; flex-direction: column; align-items: center;
     z-index: 3;
   }
-  .arena-side.left { left: 8%; }
-  .arena-side.right { right: 8%; }
+  .arena-side.left { left: 5%; }
+  .arena-side.right { right: 5%; }
 
   .arena-side .char-img {
-    width: clamp(48px, 11vw, 80px);
-    height: clamp(48px, 11vw, 80px);
     object-fit: contain;
     image-rendering: auto;
     transition: all 0.3s;
+  }
+  .arena-side .poke-img {
+    width: clamp(70px, 16vw, 120px);
+    height: clamp(70px, 16vw, 120px);
+  }
+  .arena-side .rocket-img {
+    width: clamp(60px, 14vw, 100px);
+    height: clamp(60px, 14vw, 100px);
   }
   .arena-side .char-label {
     font-size: clamp(8px, 1.6vw, 11px);
     color: #aaa;
     font-weight: 600;
     letter-spacing: 1px;
+    margin-top: 2px;
   }
-  .arena-side .team-rocket-row {
+
+  .arena-side .team-rocket-col {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+  }
+  .arena-side .team-rocket-col .rocket-row {
     display: flex; gap: 4px; align-items: flex-end;
   }
-  .arena-side .team-rocket-row .tiny {
-    width: clamp(28px, 6vw, 44px);
-    height: clamp(28px, 6vw, 44px);
-    object-fit: contain;
+
+  /* Attack animations per type */
+  .arena-side.left .poke-img.attack-electric {
+    animation: attackElectric 0.5s ease;
   }
-  .arena-side.left .char-img.attack {
-    animation: pokeAttack 0.5s ease;
+  @keyframes attackElectric {
+    0% { transform: translateX(0) scale(1); filter: brightness(1); }
+    25% { transform: translateX(80px) scale(1.3); filter: brightness(2) hue-rotate(60deg); }
+    50% { transform: translateX(-10px) scale(0.8); filter: brightness(1.5); }
+    100% { transform: translateX(0) scale(1); filter: brightness(1); }
   }
-  @keyframes pokeAttack {
+
+  .arena-side.left .poke-img.attack-fire {
+    animation: attackFire 0.5s ease;
+  }
+  @keyframes attackFire {
+    0% { transform: translateX(0) scale(1); opacity: 1; }
+    30% { transform: translateX(70px) scale(1.4); opacity: 0.7; filter: saturate(3) hue-rotate(-30deg); }
+    60% { transform: translateX(-5px) scale(0.85); filter: saturate(1); }
+    100% { transform: translateX(0) scale(1); opacity: 1; }
+  }
+
+  .arena-side.left .poke-img.attack-water {
+    animation: attackWater 0.5s ease;
+  }
+  @keyframes attackWater {
+    0% { transform: translateX(0) translateY(0); }
+    30% { transform: translateX(60px) translateY(-10px) scale(1.2); }
+    60% { transform: translateX(-8px) translateY(5px) scale(0.9); }
+    100% { transform: translateX(0) translateY(0); }
+  }
+
+  .arena-side.left .poke-img.attack-psychic {
+    animation: attackPsychic 0.5s ease;
+  }
+  @keyframes attackPsychic {
+    0% { transform: translateX(0) scale(1) rotate(0); }
+    25% { transform: translateX(50px) scale(1.3) rotate(-15deg); filter: hue-rotate(180deg); }
+    50% { transform: translateX(-5px) scale(0.8) rotate(10deg); }
+    100% { transform: translateX(0) scale(1) rotate(0); filter: none; }
+  }
+
+  .arena-side.left .poke-img.attack-ghost {
+    animation: attackGhost 0.5s ease;
+  }
+  @keyframes attackGhost {
+    0% { transform: translateX(0) scale(1); opacity: 1; }
+    20% { opacity: 0.3; }
+    40% { transform: translateX(65px) scale(1.3); opacity: 0.8; filter: saturate(0); }
+    60% { opacity: 0.5; transform: translateX(-8px) scale(0.8); }
+    100% { transform: translateX(0) scale(1); opacity: 1; filter: none; }
+  }
+
+  .arena-side.left .poke-img.attack-fairy {
+    animation: attackFairy 0.5s ease;
+  }
+  @keyframes attackFairy {
+    0% { transform: translateX(0) scale(1) rotate(0); }
+    30% { transform: translateX(55px) scale(1.2) rotate(10deg); filter: hue-rotate(90deg) brightness(1.3); }
+    60% { transform: translateX(-5px) scale(0.9) rotate(-5deg); }
+    100% { transform: translateX(0) scale(1) rotate(0); filter: none; }
+  }
+
+  .arena-side.left .poke-img.attack-dragon {
+    animation: attackDragon 0.5s ease;
+  }
+  @keyframes attackDragon {
     0% { transform: translateX(0) scale(1); }
-    30% { transform: translateX(60px) scale(1.2); }
-    60% { transform: translateX(-10px) scale(0.9); }
-    100% { transform: translateX(0) scale(1); }
+    20% { transform: translateX(30px) scale(1.5); filter: hue-rotate(45deg) saturate(2); }
+    50% { transform: translateX(85px) scale(1.1); filter: hue-rotate(90deg); }
+    70% { transform: translateX(-12px) scale(0.8); }
+    100% { transform: translateX(0) scale(1); filter: none; }
   }
-  .arena-side.right .char-img.hit {
+
+  .arena-side.left .poke-img.attack-normal {
+    animation: attackNormal 0.5s ease;
+  }
+  @keyframes attackNormal {
+    0% { transform: translateX(0); }
+    30% { transform: translateX(75px) scale(1.25); }
+    60% { transform: translateX(-10px) scale(0.85); }
+    100% { transform: translateX(0); }
+  }
+
+  .arena-side.right .rocket-img.hit {
     animation: hitShake 0.4s ease;
   }
   @keyframes hitShake {
     0%,100% { transform: translateX(0) rotate(0); }
-    20% { transform: translateX(10px) rotate(-5deg); }
+    20% { transform: translateX(12px) rotate(-5deg); }
     40% { transform: translateX(-8px) rotate(5deg); }
     60% { transform: translateX(6px) rotate(-3deg); }
   }
-  .arena-side.right .char-img.blast {
-    animation: blastOff 1s ease forwards;
+
+  .arena-side.right .rocket-img.blast {
+    animation: blastOff 1.2s ease forwards;
   }
   @keyframes blastOff {
     0% { transform: translateX(0) translateY(0) scale(1); opacity: 1; }
-    30% { transform: translateX(0) translateY(0) scale(1.1); opacity: 1; }
-    100% { transform: translateX(0) translateY(-200px) scale(0.3) rotate(20deg); opacity: 0; }
+    20% { transform: translateX(0) translateY(0) scale(1.1); opacity: 1; }
+    100% { transform: translateX(80px) translateY(-300px) scale(0.2) rotate(30deg); opacity: 0; }
   }
 
   .attack-effect {
     position: absolute;
     z-index: 5;
     pointer-events: none;
-    font-size: clamp(30px, 8vw, 60px);
+    font-size: clamp(35px, 9vw, 70px);
     animation: effectFly 0.6s ease forwards;
-    top: 30%; left: 25%;
+    top: 25%; left: 30%;
   }
   @keyframes effectFly {
-    0% { transform: translateX(0) scale(0.3); opacity: 1; }
-    50% { transform: translateX(50%) scale(1); opacity: 1; }
-    100% { transform: translateX(100%) scale(1.2); opacity: 0; }
-  }
-
-  /* Target */
-  .target-area {
-    text-align: center;
-    padding: 4px 12px;
-    flex-shrink: 0; z-index: 2; position: relative;
-  }
-  .target-label {
-    color: #888;
-    font-size: clamp(10px, 2vw, 13px);
-    letter-spacing: 1px;
-  }
-  .target-number {
-    font-size: clamp(40px, 12vw, 80px);
-    font-weight: 800;
-    color: #f1c40f;
-    text-shadow: 0 0 20px rgba(241,196,15,0.3);
-    letter-spacing: 4px;
-    min-height: clamp(48px, 14vw, 90px);
+    0% { transform: translateX(0) scale(0.3) rotate(0); opacity: 1; }
+    50% { transform: translateX(40%) scale(1.1) rotate(20deg); opacity: 1; }
+    100% { transform: translateX(80%) scale(1.3) rotate(-10deg); opacity: 0; }
   }
 
   /* Slots */
@@ -185,7 +240,6 @@
   @keyframes popIn { 0%{transform:scale(0.7)}100%{transform:scale(1)} }
   @keyframes shake { 0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)} }
 
-  /* Number pool */
   .num-pool {
     display: flex; flex-wrap: wrap;
     justify-content: center; gap: 6px;
@@ -219,7 +273,6 @@
   .feedback .msg.ok { color: #4ecca3; }
   .feedback .msg.fail { color: #e74c3c; }
 
-  /* Stats */
   .stats-row {
     display: flex; justify-content: center; gap: 20px;
     padding: 2px 12px;
@@ -229,7 +282,6 @@
   .stats-row .stat .val { font-size: clamp(16px, 3.5vw, 24px); font-weight: 700; color: #fff; }
   .stats-row .stat .label { font-size: clamp(8px, 1.6vw, 11px); color: #888; text-transform: uppercase; letter-spacing: 1px; }
 
-  /* Win overlay */
   .win-overlay {
     position: absolute; inset: 0;
     background: rgba(15,52,96,0.93);
@@ -239,15 +291,11 @@
     transition: opacity 0.5s; padding: 30px; text-align: center;
   }
   .win-overlay.active { opacity: 1; pointer-events: all; }
-  .win-overlay .star { font-size: clamp(40px,10vw,70px); animation: popIn 0.5s ease; }
   .win-overlay h2 { font-size: clamp(28px,8vw,48px); color: #4ecca3; margin: 4px 0; }
   .win-overlay .sub { font-size: clamp(14px,3vw,18px); color: #aaa; margin-bottom: 8px; }
-  .win-overlay .win-chars { display: flex; gap: 16px; align-items: center; justify-content: center; margin: 8px 0; }
-  .win-overlay .win-chars img { width: clamp(50px,12vw,80px); height: clamp(50px,12vw,80px); object-fit: contain; }
   .win-overlay button {
     padding: 12px 36px; font-size: clamp(14px,3vw,18px); font-weight: 700;
-    background: #4ecca3; color: #1a1a2e; border: none; border-radius: 12px;
-    cursor: pointer; letter-spacing: 1px; transition: transform 0.2s; margin-top: 8px;
+    background: #4ecca3; color: #1a1a2e; border: none; border-radius: 12px; cursor: pointer; letter-spacing: 1px; transition: transform 0.2s; margin-top: 8px;
   }
   .win-overlay button:hover { transform: scale(1.05); }
 
@@ -261,22 +309,11 @@
     border-bottom: 3px solid #d4a017;
   }
 
-  .phase-badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: clamp(9px, 1.8vw, 12px);
-    font-weight: 700;
-    letter-spacing: 1px;
-  }
-  .phase-badge.easy { background: #4ecca322; color: #4ecca3; }
-  .phase-badge.hard { background: #e74c3c22; color: #e74c3c; }
-
   @media (max-width: 400px) {
     .slot { width: clamp(36px,12vw,48px); height: clamp(42px,14vw,54px); font-size: 22px; }
     .num-tile { width: clamp(34px,11vw,44px); height: clamp(38px,12vw,48px); font-size: 18px; }
-    .arena-side .char-img { width: clamp(40px,10vw,60px); height: clamp(40px,10vw,60px); }
-    .arena-side .team-rocket-row .tiny { width: clamp(22px,5vw,34px); height: clamp(22px,5vw,34px); }
+    .arena-side .poke-img { width: clamp(55px,14vw,80px); height: clamp(55px,14vw,80px); }
+    .arena-side .rocket-img { width: clamp(48px,12vw,70px); height: clamp(48px,12vw,70px); }
   }
 </style>
 </head>
@@ -285,32 +322,25 @@
 <div class="game" id="game">
   <div class="header">
     <h1>⚡ Números ⚡</h1>
-    <div class="hint" id="phraseHint">Arrasta os números certos!</div>
+    <div class="hint" id="phraseHint">Onde está o número?</div>
   </div>
 
-  <!-- Arena -->
+  <!-- Arena - transparent -->
   <div class="arena" id="arena">
-    <div class="arena-bg"></div>
-    <!-- Pokemon (left) -->
     <div class="arena-side left" id="pokeSide">
-      <img class="char-img" id="pokeImg" src="" alt="Pokémon">
+      <img class="char-img poke-img" id="pokeImg" src="" alt="Pokémon">
       <div class="char-label" id="pokeName">Pikachu</div>
     </div>
-    <!-- Team Rocket (right) -->
     <div class="arena-side right" id="rocketSide">
-      <div class="team-rocket-row">
-        <img class="tiny" id="rocketJessie" src="" alt="Jessie">
-        <img class="tiny" id="rocketJames" src="" alt="James">
-        <img class="tiny" id="rocketMeowth" src="" alt="Meowth">
+      <div class="team-rocket-col">
+        <div class="rocket-row" id="rocketRow">
+          <img class="char-img rocket-img" id="rocketJessie" src="" alt="Jessie">
+          <img class="char-img rocket-img" id="rocketJames" src="" alt="James">
+          <img class="char-img rocket-img" id="rocketMeowth" src="" alt="Meowth">
+        </div>
+        <div class="char-label">Team Rocket</div>
       </div>
-      <div class="char-label">Team Rocket</div>
     </div>
-  </div>
-
-  <!-- Target -->
-  <div class="target-area">
-    <div class="target-label" id="targetLabel">Escreve o número</div>
-    <div class="target-number" id="targetNumber">?</div>
   </div>
 
   <!-- Slots -->
@@ -318,7 +348,6 @@
     <div class="slots-row" id="slotsContainer"></div>
   </div>
 
-  <!-- Number pool -->
   <div class="num-pool" id="numPool"></div>
 
   <div class="feedback"><div class="msg" id="feedbackMsg"></div></div>
@@ -330,13 +359,7 @@
   </div>
 
   <div class="win-overlay" id="winOverlay">
-    <div class="star">🏆</div>
-    <div class="win-chars">
-      <img src="" id="winPoke" alt="">
-      <span style="font-size:clamp(30px,8vw,50px);color:#f1c40f">⚡</span>
-      <img src="assets/meowth.png" style="width:clamp(40px,10vw,70px);object-fit:contain;filter:grayscale(0.8)" alt="">
-    </div>
-    <h2>Parabéns!</h2>
+    <h2>🏆 Parabéns!</h2>
     <div class="sub">Completaste todos os números!</div>
     <button onclick="restartGame()">Jogar outra vez →</button>
   </div>
@@ -346,30 +369,45 @@
 
 <script>
 const POKEMON = [
-  {name:'Pikachu',file:'pikachu.png'},
-  {name:'Charizard',file:'charizard.png'},
-  {name:'Greninja',file:'greninja.png'},
-  {name:'Lucario',file:'lucario.png'},
-  {name:'Mewtwo',file:'mewtwo.png'},
-  {name:'Gengar',file:'gengar.png'},
-  {name:'Eevee',file:'eevee.png'},
-  {name:'Snorlax',file:'snorlax.png'},
-  {name:'Dragonite',file:'dragonite.png'},
-  {name:'Mew',file:'mew.png'},
-  {name:'Garchomp',file:'garchomp.png'},
-  {name:'Gardevoir',file:'gardevoir.png'},
-  {name:'Infernape',file:'infernape.png'},
-  {name:'Umbreon',file:'umbreon.png'},
-  {name:'Sylveon',file:'sylveon.png'},
+  {name:'Pikachu',file:'pikachu.png',type:'electric'},
+  {name:'Charizard',file:'charizard.png',type:'fire'},
+  {name:'Greninja',file:'greninja.png',type:'water'},
+  {name:'Lucario',file:'lucario.png',type:'normal'},
+  {name:'Mewtwo',file:'mewtwo.png',type:'psychic'},
+  {name:'Gengar',file:'gengar.png',type:'ghost'},
+  {name:'Eevee',file:'eevee.png',type:'normal'},
+  {name:'Snorlax',file:'snorlax.png',type:'normal'},
+  {name:'Dragonite',file:'dragonite.png',type:'dragon'},
+  {name:'Mew',file:'mew.png',type:'psychic'},
+  {name:'Garchomp',file:'garchomp.png',type:'dragon'},
+  {name:'Gardevoir',file:'gardevoir.png',type:'fairy'},
+  {name:'Infernape',file:'infernape.png',type:'fire'},
+  {name:'Umbreon',file:'umbreon.png',type:'ghost'},
+  {name:'Sylveon',file:'sylveon.png',type:'fairy'},
 ];
 
-const ATTACK_EFFECTS = ['💥','⚡','🔥','💫','⭐','💢','🌀','🌪️'];
+const TYPE_EFFECTS = {
+  electric: { emoji:'⚡', cls:'attack-electric' },
+  fire:     { emoji:'🔥', cls:'attack-fire' },
+  water:    { emoji:'💧', cls:'attack-water' },
+  psychic:  { emoji:'🔮', cls:'attack-psychic' },
+  ghost:    { emoji:'👻', cls:'attack-ghost' },
+  fairy:    { emoji:'✨', cls:'attack-fairy' },
+  dragon:   { emoji:'🐉', cls:'attack-dragon' },
+  normal:   { emoji:'💥', cls:'attack-normal' },
+};
 
-let currentPokeIdx = 0;
-let phase = 1; // 1 = 0-9, 2 = 10-20
-let roundNum = 0;
+const ROCKET_MEMBERS = [
+  { id:'rocketJessie', name:'Jessie' },
+  { id:'rocketJames', name:'James' },
+  { id:'rocketMeowth', name:'Meowth' },
+];
+
+let currentPoke = POKEMON[0];
+let pokeRocketIdx = 0; // which team rocket member to blast next (0-2)
+let phase = 1;
+let roundInPhase = 0;
 let targetNum = 0;
-let totalCorrect = 0;
 let score = 0;
 let isWin = false;
 let dragData = null;
@@ -377,11 +415,8 @@ let audioCtx = null;
 let audioInit = false;
 let slotsFilled = 0;
 let totalSlots = 1;
-let phase1Done = false;
-let roundInPhase = 0;
 const ROUNDS_PER_PHASE = 10;
 
-// Init audio on first tap
 function initAudio() {
   if (audioInit) return;
   audioInit = true;
@@ -393,7 +428,6 @@ function initAudio() {
 document.addEventListener('touchstart', initAudio, { once: true });
 document.addEventListener('click', initAudio, { once: true });
 
-// Speech
 function speak(text, cb) {
   if (!window.speechSynthesis) { if(cb) cb(); return; }
   window.speechSynthesis.cancel();
@@ -407,15 +441,13 @@ function speak(text, cb) {
 function speakNumber(n) {
   const names = ['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove',
     'dez','onze','doze','treze','catorze','quinze','dezasseis','dezassete','dezoito','dezanove','vinte'];
-  speak('Escreve o número ' + (names[n] || n));
+  speak('Onde está o ' + (names[n] || n) + '?');
 }
 
-// Sounds
 function sfxCorrect() {
   try {
     if (!audioCtx) return;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
     o.type = 'triangle';
     o.frequency.setValueAtTime(523, audioCtx.currentTime);
     o.frequency.linearRampToValueAtTime(784, audioCtx.currentTime + 0.15);
@@ -428,10 +460,8 @@ function sfxCorrect() {
 function sfxWrong() {
   try {
     if (!audioCtx) return;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = 'square';
-    o.frequency.value = 180;
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.type = 'square'; o.frequency.value = 180;
     g.gain.setValueAtTime(0.15, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
     o.connect(g); g.connect(audioCtx.destination);
@@ -445,8 +475,7 @@ function sfxBlast() {
     const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
     const d = buf.getChannelData(0);
     for (let i = 0; i < bufSize; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/(bufSize*0.2));
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf;
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
     const g = audioCtx.createGain();
     g.gain.setValueAtTime(0.3, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
@@ -455,113 +484,72 @@ function sfxBlast() {
   } catch(e) {}
 }
 
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function getNumberDigits(n) {
-  if (n < 10) return [n];
-  return [Math.floor(n / 10), n % 10];
-}
-
+function shuffle(a) { const arr=[...a];for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr; }
+function getNumberDigits(n) { return n < 10 ? [n] : [Math.floor(n/10), n % 10]; }
 function getPoolForPhase(ph) {
-  if (ph === 1) {
-    // 0-9, all digits once
-    return shuffle([0,1,2,3,4,5,6,7,8,9]);
-  } else {
-    // Two copies of each digit for building 10-20
-    return shuffle([0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9]);
-  }
+  if (ph === 1) return shuffle([0,1,2,3,4,5,6,7,8,9]);
+  return shuffle([0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9]);
 }
 
-function pickRandomPokemon() {
+function pickNewPokemon() {
   let idx;
-  do { idx = Math.floor(Math.random() * POKEMON.length); } while (idx === currentPokeIdx);
-  currentPokeIdx = idx;
-  return POKEMON[idx];
+  do { idx = Math.floor(Math.random() * POKEMON.length); } while (POKEMON[idx] === currentPoke);
+  currentPoke = POKEMON[idx];
+  pokeRocketIdx = 0;
+  document.getElementById('pokeImg').src = 'assets/' + currentPoke.file;
+  document.getElementById('pokeName').textContent = currentPoke.name;
+  // Show all Team Rocket members
+  ROCKET_MEMBERS.forEach(m => {
+    document.getElementById(m.id).style.opacity = '1';
+    document.getElementById(m.id).style.transform = '';
+    document.getElementById(m.id).classList.remove('blast','hit');
+  });
 }
 
 function loadRound() {
   isWin = false;
+  if (phase === 1 && roundInPhase >= ROUNDS_PER_PHASE) { phase = 2; roundInPhase = 0; }
+  if (phase === 2 && roundInPhase >= ROUNDS_PER_PHASE) { onWin(); return; }
 
-  // Determine phase
-  if (phase === 1 && roundInPhase >= ROUNDS_PER_PHASE) {
-    phase = 2;
-    roundInPhase = 0;
-  }
-  
-  if (phase === 2 && roundInPhase >= ROUNDS_PER_PHASE) {
-    // Win!
-    onWin();
-    return;
-  }
-
-  // Pick target number
-  if (phase === 1) {
-    targetNum = Math.floor(Math.random() * 10); // 0-9
-  } else {
-    targetNum = 10 + Math.floor(Math.random() * 11); // 10-20
-  }
-
+  targetNum = phase === 1 ? Math.floor(Math.random() * 10) : 10 + Math.floor(Math.random() * 11);
   const digits = getNumberDigits(targetNum);
   totalSlots = digits.length;
   slotsFilled = 0;
 
-  // Update UI
-  document.getElementById('targetNumber').textContent = '?';
-  document.getElementById('targetLabel').textContent = 'Escreve o número';
   document.getElementById('phaseDisplay').textContent = phase === 1 ? '0-9' : '10-20';
   document.getElementById('roundDisplay').textContent = (roundInPhase + 1) + '/' + ROUNDS_PER_PHASE;
   document.getElementById('feedbackMsg').textContent = '';
 
-  // Pick Pokemon
-  const poke = pickRandomPokemon();
-  document.getElementById('pokeImg').src = 'assets/' + poke.file;
-  document.getElementById('pokeName').textContent = poke.name;
-
-  // Set Team Rocket
-  document.getElementById('rocketJessie').src = 'assets/jessie.png';
-  document.getElementById('rocketJames').src = 'assets/james.png';
-  document.getElementById('rocketMeowth').src = 'assets/meowth.png';
-
-  // Reset character animations
-  document.getElementById('pokeImg').classList.remove('attack');
-  document.querySelectorAll('#rocketSide .tiny').forEach(el => { el.classList.remove('hit','blast'); });
-
-  // Clear old attack effects
-  document.querySelectorAll('.attack-effect').forEach(el => el.remove());
+  // Pick Pokemon if all 3 Team Rocket have flown
+  if (pokeRocketIdx >= 3) pickNewPokemon();
 
   // Build slots
   const slotsEl = document.getElementById('slotsContainer');
   slotsEl.innerHTML = '';
-  digits.forEach((d, i) => {
+  digits.forEach((d) => {
     const div = document.createElement('div');
     div.className = 'slot';
-    div.dataset.slotIdx = i;
     div.dataset.expected = d;
     div.textContent = '';
     div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
     div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
-    div.addEventListener('drop', e => { e.preventDefault(); div.classList.remove('drag-over'); handleDrop(e, i); });
+    div.addEventListener('drop', e => {
+      e.preventDefault(); div.classList.remove('drag-over');
+      try { const v=parseInt(e.dataTransfer.getData('text/plain'));if(!isNaN(v))handleNumberDrop(v,div,null); }catch(_){}
+    });
     slotsEl.appendChild(div);
   });
 
-  // Build number pool
+  // Build pool
   const pool = document.getElementById('numPool');
   pool.innerHTML = '';
   const poolNums = getPoolForPhase(phase);
-  poolNums.forEach((n, i) => {
+  poolNums.forEach((n) => {
     const div = document.createElement('div');
     div.className = 'num-tile';
     div.draggable = true;
     div.textContent = n;
     div.dataset.value = n;
-    div.dataset.poolIdx = i;
     div.dataset.used = 'false';
 
     div.addEventListener('dragstart', e => {
@@ -574,68 +562,49 @@ function loadRound() {
     let tx, ty;
     div.addEventListener('touchstart', e => {
       if (div.dataset.used === 'true') return;
-      const t = e.touches[0];
-      tx = t.clientX; ty = t.clientY;
+      const t = e.touches[0]; tx = t.clientX; ty = t.clientY;
       div.classList.add('dragging');
-      dragData = { value: n, el: div, poolIdx: i };
+      dragData = { value: n, el: div };
       const ghost = document.getElementById('dragGhost');
-      ghost.textContent = n;
-      ghost.style.display = 'flex'; ghost.style.left = t.clientX + 'px'; ghost.style.top = t.clientY + 'px';
+      ghost.textContent = n; ghost.style.display='flex';
+      ghost.style.left=t.clientX+'px'; ghost.style.top=t.clientY+'px';
     }, { passive: true });
     div.addEventListener('touchmove', e => {
       e.preventDefault();
       const t = e.touches[0];
-      document.getElementById('dragGhost').style.left = t.clientX + 'px';
-      document.getElementById('dragGhost').style.top = t.clientY + 'px';
+      document.getElementById('dragGhost').style.left=t.clientX+'px';
+      document.getElementById('dragGhost').style.top=t.clientY+'px';
     }, { passive: false });
     div.addEventListener('touchend', e => {
       div.classList.remove('dragging');
-      document.getElementById('dragGhost').style.display = 'none';
+      document.getElementById('dragGhost').style.display='none';
       const t = e.changedTouches[0];
-      const dx = t.clientX - tx, dy = t.clientY - ty;
-      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      const dx=t.clientX-tx, dy=t.clientY-ty;
+      if (Math.abs(dx)<5&&Math.abs(dy)<5) return;
       if (dragData) {
-        const slots = document.querySelectorAll('.slot');
-        let targetIdx = -1;
-        slots.forEach(slot => {
+        const slots = document.querySelectorAll('.slot:not(.filled)');
+        for (const slot of slots) {
           const r = slot.getBoundingClientRect();
-          if (t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom)
-            targetIdx = parseInt(slot.dataset.slotIdx);
-        });
-        if (targetIdx >= 0) handleNumberDrop(dragData.value, targetIdx, dragData.el);
+          if (t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom) {
+            handleNumberDrop(dragData.value, slot, dragData.el); break;
+          }
+        }
       }
       dragData = null;
     }, { passive: true });
     div.addEventListener('click', () => {
       if (div.dataset.used === 'true') return;
-      const slots = document.querySelectorAll('.slot');
-      for (const slot of slots) {
-        if (!slot.classList.contains('filled')) {
-          handleNumberDrop(n, parseInt(slot.dataset.slotIdx), div);
-          break;
-        }
-      }
+      const slot = document.querySelector('.slot:not(.filled)');
+      if (slot) handleNumberDrop(n, slot, div);
     });
     pool.appendChild(div);
   });
 
-  // Speak the target number
-  setTimeout(() => speakNumber(targetNum), 300);
+  setTimeout(() => speakNumber(targetNum), 400);
 }
 
-function handleDrop(e, slotIdx) {
-  try {
-    const val = parseInt(e.dataTransfer.getData('text/plain'));
-    if (!isNaN(val)) handleNumberDrop(val, slotIdx, null);
-  } catch(_) {}
-}
-
-function handleNumberDrop(value, slotIdx, sourceEl) {
-  if (isWin) return;
-  const slots = document.querySelectorAll('.slot');
-  const slotEl = Array.from(slots).find(s => parseInt(s.dataset.slotIdx) === slotIdx);
-  if (!slotEl || slotEl.classList.contains('filled')) return;
-
+function handleNumberDrop(value, slotEl, sourceEl) {
+  if (isWin || !slotEl || slotEl.classList.contains('filled')) return;
   const expected = parseInt(slotEl.dataset.expected);
 
   if (value === expected) {
@@ -643,28 +612,20 @@ function handleNumberDrop(value, slotIdx, sourceEl) {
     slotEl.textContent = value;
     slotsFilled++;
 
-    // Mark tile as used
-    if (sourceEl) {
-      sourceEl.dataset.used = 'true';
-      sourceEl.classList.add('placed');
-    } else {
-      // Find by value
+    if (sourceEl) { sourceEl.dataset.used='true'; sourceEl.classList.add('placed'); }
+    else {
       document.querySelectorAll('.num-tile').forEach(el => {
-        if (parseInt(el.dataset.value) === value && el.dataset.used === 'false') {
-          el.dataset.used = 'true';
-          el.classList.add('placed');
-        }
+        if (parseInt(el.dataset.value)===value && el.dataset.used==='false') { el.dataset.used='true'; el.classList.add('placed'); }
       });
     }
 
     sfxCorrect();
     score++;
     showFeedback('✅', 'ok');
-    updateStats();
+    document.getElementById('scoreDisplay').textContent = score;
 
     if (slotsFilled === totalSlots) {
-      // Round complete!
-      setTimeout(() => triggerPokemonAttack(), 300);
+      setTimeout(triggerPokemonAttack, 300);
     }
   } else {
     slotEl.classList.add('wrong');
@@ -675,65 +636,53 @@ function handleNumberDrop(value, slotIdx, sourceEl) {
 }
 
 function triggerPokemonAttack() {
+  const type = currentPoke.type || 'normal';
+  const effect = TYPE_EFFECTS[type] || TYPE_EFFECTS.normal;
   const pokeImg = document.getElementById('pokeImg');
-  const rocketImgs = document.querySelectorAll('#rocketSide .tiny');
-  
-  // Attack effect
-  const effect = document.createElement('div');
-  effect.className = 'attack-effect';
-  effect.textContent = ATTACK_EFFECTS[Math.floor(Math.random() * ATTACK_EFFECTS.length)];
-  document.getElementById('arena').appendChild(effect);
-  
+
+  // Attack effect emoji
+  const fx = document.createElement('div');
+  fx.className = 'attack-effect';
+  fx.textContent = effect.emoji;
+  document.getElementById('arena').appendChild(fx);
+  setTimeout(() => fx.remove(), 800);
+
   sfxBlast();
 
-  // Pokemon attacks
-  pokeImg.classList.remove('attack');
-  void pokeImg.offsetWidth;
-  pokeImg.classList.add('attack');
+  // Pokemon attacks with type animation
+  pokeImg.className = 'char-img poke-img ' + effect.cls;
+  setTimeout(() => { pokeImg.className = 'char-img poke-img'; }, 600);
 
-  // Team Rocket hit and blast off
-  setTimeout(() => {
-    rocketImgs.forEach(el => {
-      el.classList.remove('hit','blast');
-      void el.offsetWidth;
-      el.classList.add('hit');
-    });
-  }, 200);
-
-  setTimeout(() => {
-    rocketImgs.forEach(el => {
+  // One Team Rocket member gets hit and blasts off
+  const member = ROCKET_MEMBERS[pokeRocketIdx];
+  const el = document.getElementById(member.id);
+  if (el) {
+    el.classList.add('hit');
+    setTimeout(() => {
       el.classList.remove('hit');
-      void el.offsetWidth;
       el.classList.add('blast');
-    });
-    // Say the number that was just completed
-    document.getElementById('targetNumber').textContent = targetNum;
-  }, 500);
+    }, 300);
+  }
+
+  pokeRocketIdx++;
 
   // Next round
   setTimeout(() => {
     roundInPhase++;
-    roundNum++;
     loadRound();
   }, 1800);
 }
 
 function onWin() {
   isWin = true;
-  document.getElementById('winPoke').src = document.getElementById('pokeImg').src;
   document.getElementById('winOverlay').classList.add('active');
   speak('Parabéns! Completaste todos os números!');
-  sfxBlast();
 }
 
 function restartGame() {
-  phase = 1;
-  roundInPhase = 0;
-  roundNum = 0;
-  score = 0;
-  phase1Done = false;
+  phase = 1; roundInPhase = 0; score = 0; pokeRocketIdx = 3; // force new Pokemon
   document.getElementById('winOverlay').classList.remove('active');
-  updateStats();
+  pickNewPokemon();
   loadRound();
 }
 
@@ -744,10 +693,8 @@ function showFeedback(msg, type) {
   el._t = setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 800);
 }
 
-function updateStats() {
-  document.getElementById('scoreDisplay').textContent = score;
-}
-
+// Initialize
+pickNewPokemon();
 restartGame();
 </script>
 </body>
