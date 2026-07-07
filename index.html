@@ -537,15 +537,15 @@ function pickNewPokemon() {
     document.getElementById(m.id).style.transform = '';
     document.getElementById(m.id).classList.remove('blast','hit');
   });
-  // Speak intro: Pokemon name in EN, rest in PT
+  // Speak intro: Pokemon name + Team Rocket in EN
   setTimeout(() => {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(currentPoke.name + '!');
       u.lang = 'en-US'; u.rate = 0.85;
       u.onend = () => {
-        const u2 = new SpeechSynthesisUtterance('contra Team Rocket!');
-        u2.lang = 'pt-PT'; u2.rate = 0.85; u2.pitch = 1.0;
+        const u2 = new SpeechSynthesisUtterance('versus Team Rocket!');
+        u2.lang = 'en-US'; u2.rate = 0.85; u2.pitch = 1.0;
         window.speechSynthesis.speak(u2);
       };
       window.speechSynthesis.speak(u);
