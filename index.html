@@ -590,19 +590,29 @@ function showIntro(imgSrc, name, duration, callback) {
   nameEl.textContent = name;
   overlay.classList.add('active');
   
-  // Speak: name (EN) → "contra" (PT) → opponent (EN)
-  if (window.speechSynthesis) {
+  // Speak the name
+  if (window.speechSynthesis && window.speechSynthesis.speak) {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(name + '!');
     u.lang = 'en-US'; u.rate = 0.85;
-
+    u.onend = function() {
+      setTimeout(function() {
+        overlay.classList.remove('active');
+        if (callback) setTimeout(callback, 350);
+      }, 300);
+    };
     window.speechSynthesis.speak(u);
+    // Fallback timeout
+    setTimeout(function() {
+      overlay.classList.remove('active');
+      if (callback) setTimeout(callback, 350);
+    }, duration);
+  } else {
+    setTimeout(function() {
+      overlay.classList.remove('active');
+      if (callback) setTimeout(callback, 350);
+    }, duration);
   }
-  
-  setTimeout(() => {
-    overlay.classList.remove('active');
-    if (callback) setTimeout(callback, 350);
-  }, duration);
 }
 
 function pickNewPokemon(callback) {
