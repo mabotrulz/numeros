@@ -59,12 +59,12 @@
     transition: all 0.3s;
   }
   .arena-side .poke-img {
-    width: clamp(70px, 16vw, 120px);
-    height: clamp(70px, 16vw, 120px);
+    width: clamp(100px, 22vw, 160px);
+    height: clamp(100px, 22vw, 160px);
   }
   .arena-side .rocket-img {
-    width: clamp(60px, 14vw, 100px);
-    height: clamp(60px, 14vw, 100px);
+    width: clamp(80px, 18vw, 130px);
+    height: clamp(80px, 18vw, 130px);
   }
   .arena-side .char-label {
     font-size: clamp(8px, 1.6vw, 11px);
@@ -200,10 +200,10 @@
 
   /* Slots */
   .slots-area {
-    flex: 1;
+    flex: 2;
     display: flex; flex-direction: column;
     justify-content: center; align-items: center;
-    padding: 4px 8px;
+    padding: 2px 8px;
     min-height: 0; z-index: 2; position: relative;
   }
   .slots-row {
@@ -242,9 +242,9 @@
 
   .num-pool {
     display: flex; flex-wrap: wrap;
-    justify-content: center; gap: 6px;
+    justify-content: center; gap: 5px;
     padding: 6px 10px;
-    flex-shrink: 0; min-height: 48px; max-height: 120px;
+    flex-shrink: 0; min-height: 44px; max-height: 150px;
     overflow-y: auto; z-index: 2; position: relative;
   }
   .num-tile {
@@ -298,6 +298,29 @@
     background: #4ecca3; color: #1a1a2e; border: none; border-radius: 12px; cursor: pointer; letter-spacing: 1px; transition: transform 0.2s; margin-top: 8px;
   }
   .win-overlay button:hover { transform: scale(1.05); }
+
+  /* Start screen */
+  .start-overlay {
+    position: absolute; inset: 0;
+    background: rgba(15,52,96,0.95);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 150;
+    padding: 30px; text-align: center;
+    transition: opacity 0.5s;
+  }
+  .start-overlay.hidden { opacity: 0; pointer-events: none; }
+  .start-overlay .logo { font-size: clamp(50px, 14vw, 90px); margin-bottom: 8px; }
+  .start-overlay h2 { font-size: clamp(24px, 7vw, 40px); color: #f1c40f; margin-bottom: 4px; }
+  .start-overlay p { font-size: clamp(13px, 3vw, 17px); color: #aaa; margin-bottom: 24px; }
+  .start-overlay .start-btn {
+    padding: 16px 48px; font-size: clamp(18px, 4vw, 24px); font-weight: 700;
+    background: linear-gradient(135deg, #f1c40f, #f39c12);
+    color: #1a1a2e; border: none; border-radius: 16px;
+    cursor: pointer; letter-spacing: 2px;
+    transition: transform 0.2s; box-shadow: 0 6px 25px rgba(241,196,15,0.3);
+  }
+  .start-overlay .start-btn:hover { transform: scale(1.08); }
 
   .drag-ghost {
     position: fixed; pointer-events: none; z-index: 200;
@@ -362,6 +385,14 @@
     <h2>🏆 Parabéns!</h2>
     <div class="sub">Completaste todos os números!</div>
     <button onclick="restartGame()">Jogar outra vez →</button>
+  </div>
+
+  <!-- Start overlay -->
+  <div class="start-overlay" id="startOverlay">
+    <div class="logo">⚡</div>
+    <h2>Números</h2>
+    <p>Ajuda o Pokémon a derrotar a Team Rocket!</p>
+    <button class="start-btn" onclick="startGame()">▶ COMEÇAR</button>
   </div>
 </div>
 
@@ -652,6 +683,9 @@ function triggerPokemonAttack() {
   document.getElementById('arena').appendChild(fx);
   setTimeout(() => fx.remove(), 800);
 
+  // Clear old hint when attack starts
+  clearInterval(hintTimer);
+  
   sfxBlast();
 
   // Pokemon attacks with type animation
@@ -711,10 +745,19 @@ function setPokeImage(poke) {
   document.getElementById('pokeName').textContent = poke.name;
 }
 
-// Set images on page load
+// Start overlay
+function startGame() {
+  document.getElementById('startOverlay').classList.add('hidden');
+  initAudio();
+  setRocketImages();
+  pickNewPokemon();
+  restartGame();
+}
+
+// Set images on page load (hidden until start)
 setRocketImages();
-pickNewPokemon();
-restartGame();
+document.getElementById('pokeImg').src = 'assets/' + POKEMON[0].file;
+document.getElementById('pokeName').textContent = POKEMON[0].name;
 </script>
 </body>
 </html>
