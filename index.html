@@ -625,7 +625,7 @@ function pickNewPokemon(callback) {
     });
 
     // Intro animation: Pokemon "contra" Team Rocket → then all 3 TR members
-    showIntro('assets/' + currentPoke.file, currentPoke.name, 1800, function() {, 'Team Rocket')
+    showIntro('assets/' + currentPoke.file, currentPoke.name + ' contra Team Rocket!', 1800, function() {
       document.getElementById('pokeSide').style.opacity = '0';
       document.getElementById('rocketSide').style.opacity = '0';
     
