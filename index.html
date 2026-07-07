@@ -38,7 +38,7 @@
   /* Arena - transparent bg */
   .arena {
     flex-shrink: 0;
-    height: clamp(180px, 38vw, 260px);
+    height: clamp(220px, 48vw, 340px);
     position: relative;
     margin: 0 4px;
     z-index: 2;
@@ -59,12 +59,12 @@
     transition: all 0.3s;
   }
   .arena-side .poke-img {
-    width: clamp(140px, 30vw, 220px);
-    height: clamp(140px, 30vw, 220px);
+    width: clamp(180px, 40vw, 300px);
+    height: clamp(180px, 40vw, 300px);
   }
   .arena-side .rocket-img {
-    width: clamp(110px, 24vw, 180px);
-    height: clamp(110px, 24vw, 180px);
+    width: clamp(140px, 32vw, 240px);
+    height: clamp(140px, 32vw, 240px);
   }
   .arena-side .char-label {
     font-size: clamp(8px, 1.6vw, 11px);
@@ -575,7 +575,7 @@ function getPoolForPhase(ph) {
 }
 
 // Intro animation
-function showIntro(imgSrc, name, duration, callback) {
+function showIntro(imgSrc, name, duration, callback, opponent) {
   const overlay = document.getElementById('introOverlay');
   const img = document.getElementById('introImage');
   const nameEl = document.getElementById('introName');
@@ -584,11 +584,24 @@ function showIntro(imgSrc, name, duration, callback) {
   nameEl.textContent = name;
   overlay.classList.add('active');
   
-  // Speak the name
+  // Speak: name (EN) → "contra" (PT) → opponent (EN)
   if (window.speechSynthesis) {
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(name);
+    const u = new SpeechSynthesisUtterance(name + '!');
     u.lang = 'en-US'; u.rate = 0.85;
+    if (opponent) {
+      u.onend = function() {
+        var u2 = new SpeechSynthesisUtterance('contra');
+        u2.lang = 'pt-PT'; u2.rate = 0.85; u2.pitch = 1.0;
+        u2.onend = function() {
+          var u3 = new SpeechSynthesisUtterance(opponent + '!');
+          u3.lang = 'en-US'; u3.rate = 0.85;
+          window.speechSynthesis.speak(u3);
+        };
+        window.speechSynthesis.speak(u2);
+      };
+    }
+
     window.speechSynthesis.speak(u);
   }
   
@@ -611,8 +624,8 @@ function pickNewPokemon(callback) {
       document.getElementById(m.id).classList.remove('blast','hit');
     });
 
-    // Intro animation: Pokemon → Team Rocket (all 3) → callback
-    showIntro('assets/' + currentPoke.file, currentPoke.name, 1800, () => {
+    // Intro animation: Pokemon "contra" Team Rocket → then all 3 TR members
+    showIntro('assets/' + currentPoke.file, currentPoke.name, 1800, function() {, 'Team Rocket')
       document.getElementById('pokeSide').style.opacity = '0';
       document.getElementById('rocketSide').style.opacity = '0';
     
@@ -648,10 +661,21 @@ function pickNewPokemon(callback) {
       
       overlay.classList.add('active');
       
+      // Speak: Pokemon name + contra + Team Rocket
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance('Team Rocket!');
+        const u = new SpeechSynthesisUtterance(currentPoke.name + '!');
         u.lang = 'en-US'; u.rate = 0.85;
+        u.onend = function() {
+          var u2 = new SpeechSynthesisUtterance('contra');
+          u2.lang = 'pt-PT'; u2.rate = 0.85; u2.pitch = 1.0;
+          u2.onend = function() {
+            var u3 = new SpeechSynthesisUtterance('Team Rocket!');
+            u3.lang = 'en-US'; u3.rate = 0.85;
+            window.speechSynthesis.speak(u3);
+          };
+          window.speechSynthesis.speak(u2);
+        };
         window.speechSynthesis.speak(u);
       }
       
