@@ -38,9 +38,9 @@
   /* Arena - transparent bg */
   .arena {
     flex-shrink: 0;
-    height: clamp(120px, 26vw, 180px);
+    height: clamp(180px, 38vw, 260px);
     position: relative;
-    margin: 0 8px;
+    margin: 0 4px;
     z-index: 2;
   }
 
@@ -59,12 +59,12 @@
     transition: all 0.3s;
   }
   .arena-side .poke-img {
-    width: clamp(100px, 22vw, 160px);
-    height: clamp(100px, 22vw, 160px);
+    width: clamp(140px, 30vw, 220px);
+    height: clamp(140px, 30vw, 220px);
   }
   .arena-side .rocket-img {
-    width: clamp(80px, 18vw, 130px);
-    height: clamp(80px, 18vw, 130px);
+    width: clamp(110px, 24vw, 180px);
+    height: clamp(110px, 24vw, 180px);
   }
   .arena-side .char-label {
     font-size: clamp(8px, 1.6vw, 11px);
@@ -537,18 +537,25 @@ function pickNewPokemon() {
     document.getElementById(m.id).style.transform = '';
     document.getElementById(m.id).classList.remove('blast','hit');
   });
-  // Speak intro: Pokemon name + Team Rocket in EN
+  // Speak intro: Pokemon name + Team Rocket in EN, then callback
   setTimeout(() => {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
+      let spoken = false;
       const u = new SpeechSynthesisUtterance(currentPoke.name + '!');
       u.lang = 'en-US'; u.rate = 0.85;
       u.onend = () => {
+        if (spoken) return; spoken = true;
         const u2 = new SpeechSynthesisUtterance('versus Team Rocket!');
         u2.lang = 'en-US'; u2.rate = 0.85; u2.pitch = 1.0;
+        u2.onend = () => { newPokeIntro = false; };
         window.speechSynthesis.speak(u2);
       };
       window.speechSynthesis.speak(u);
+      // Fallback: mark done after 3s even if speech fails
+      setTimeout(() => { newPokeIntro = false; }, 3000);
+    } else {
+      newPokeIntro = false;
     }
   }, 200);
   newPokeIntro = true;
@@ -648,15 +655,23 @@ function loadRound() {
     pool.appendChild(div);
   });
 
-  const introDelay = newPokeIntro ? 2500 : 400;
-  newPokeIntro = false;
-  setTimeout(() => speakNumber(targetNum), introDelay);
-  
-  // Repeat hint every 5s
-  clearInterval(hintTimer);
-  setTimeout(() => {
+  // Wait for any Pokemon intro to finish, then speak number
+  const waitIntro = setInterval(() => {
+    if (!newPokeIntro) {
+      clearInterval(waitIntro);
+      speakNumber(targetNum);
+      // Repeat hint every 5s
+      clearInterval(hintTimer);
+      hintTimer = setInterval(() => speakNumber(targetNum), 5000);
+    }
+  }, 200);
+  // Safety timeout
+  setTimeout(() => { clearInterval(waitIntro); if (newPokeIntro) {
+    newPokeIntro = false;
+    speakNumber(targetNum);
+    clearInterval(hintTimer);
     hintTimer = setInterval(() => speakNumber(targetNum), 5000);
-  }, introDelay + 100);
+  }}, 5000);
 }
 
 function handleNumberDrop(value, slotEl, sourceEl) {
