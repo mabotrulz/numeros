@@ -59,12 +59,12 @@
     transition: all 0.3s;
   }
   .arena-side .poke-img {
-    width: clamp(180px, 40vw, 300px);
-    height: clamp(180px, 40vw, 300px);
-  }
-  .arena-side .rocket-img {
     width: clamp(140px, 32vw, 240px);
     height: clamp(140px, 32vw, 240px);
+  }
+  .arena-side .rocket-img {
+    width: clamp(110px, 26vw, 190px);
+    height: clamp(110px, 26vw, 190px);
   }
   .arena-side .char-label {
     font-size: clamp(8px, 1.6vw, 11px);
@@ -79,7 +79,7 @@
     align-items: center; gap: 2px;
   }
   .arena-side .team-rocket-col .rocket-row {
-    display: flex; gap: 4px; align-items: flex-end;
+    display: flex; gap: 2px; align-items: flex-end;
   }
 
   /* Attack animations per type */
@@ -380,8 +380,8 @@
   @media (max-width: 400px) {
     .slot { width: clamp(36px,12vw,48px); height: clamp(42px,14vw,54px); font-size: 22px; }
     .num-tile { width: clamp(34px,11vw,44px); height: clamp(38px,12vw,48px); font-size: 18px; }
-    .arena-side .poke-img { width: clamp(120px,28vw,180px); height: clamp(120px,28vw,180px); }
-    .arena-side .rocket-img { width: clamp(90px,22vw,140px); height: clamp(90px,22vw,140px); }
+    .arena-side .poke-img { width: clamp(100px,24vw,140px); height: clamp(100px,24vw,140px); }
+    .arena-side .rocket-img { width: clamp(70px,18vw,110px); height: clamp(70px,18vw,110px); }
   }
 </style>
 </head>
@@ -633,7 +633,7 @@ function pickNewPokemon(callback) {
       
       const row = document.createElement('div');
       row.style.display = 'flex';
-      row.style.gap = 'clamp(10px, 3vw, 24px)';
+      row.style.gap = 'clamp(6px, 2vw, 16px)';
       row.style.alignItems = 'flex-end';
       row.style.marginBottom = '8px';
       
@@ -655,21 +655,11 @@ function pickNewPokemon(callback) {
       
       overlay.classList.add('active');
       
-      // Speak: Pokemon name + contra + Team Rocket
+      // Speak: just Team Rocket
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(currentPoke.name + '!');
+        const u = new SpeechSynthesisUtterance('Team Rocket!');
         u.lang = 'en-US'; u.rate = 0.85;
-        u.onend = function() {
-          var u2 = new SpeechSynthesisUtterance('contra');
-          u2.lang = 'pt-PT'; u2.rate = 0.85; u2.pitch = 1.0;
-          u2.onend = function() {
-            var u3 = new SpeechSynthesisUtterance('Team Rocket!');
-            u3.lang = 'en-US'; u3.rate = 0.85;
-            window.speechSynthesis.speak(u3);
-          };
-          window.speechSynthesis.speak(u2);
-        };
         window.speechSynthesis.speak(u);
       }
       
