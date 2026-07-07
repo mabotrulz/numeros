@@ -415,6 +415,7 @@ let audioCtx = null;
 let audioInit = false;
 let slotsFilled = 0;
 let totalSlots = 1;
+let hintTimer = null;
 const ROUNDS_PER_PHASE = 10;
 
 function initAudio() {
@@ -496,8 +497,8 @@ function pickNewPokemon() {
   do { idx = Math.floor(Math.random() * POKEMON.length); } while (POKEMON[idx] === currentPoke);
   currentPoke = POKEMON[idx];
   pokeRocketIdx = 0;
-  document.getElementById('pokeImg').src = 'assets/' + currentPoke.file;
-  document.getElementById('pokeName').textContent = currentPoke.name;
+  setPokeImage(currentPoke);
+  setRocketImages();
   // Show all Team Rocket members
   ROCKET_MEMBERS.forEach(m => {
     document.getElementById(m.id).style.opacity = '1';
@@ -601,6 +602,10 @@ function loadRound() {
   });
 
   setTimeout(() => speakNumber(targetNum), 400);
+  
+  // Repeat hint every 5s
+  clearInterval(hintTimer);
+  hintTimer = setInterval(() => speakNumber(targetNum), 5000);
 }
 
 function handleNumberDrop(value, slotEl, sourceEl) {
@@ -675,6 +680,7 @@ function triggerPokemonAttack() {
 
 function onWin() {
   isWin = true;
+  clearInterval(hintTimer);
   document.getElementById('winOverlay').classList.add('active');
   speak('Parabéns! Completaste todos os números!');
 }
@@ -693,7 +699,20 @@ function showFeedback(msg, type) {
   el._t = setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 800);
 }
 
-// Initialize
+// Initialize - set images immediately, then start game
+function setRocketImages() {
+  document.getElementById('rocketJessie').src = 'assets/jessie.png';
+  document.getElementById('rocketJames').src = 'assets/james.png';
+  document.getElementById('rocketMeowth').src = 'assets/meowth.png';
+}
+
+function setPokeImage(poke) {
+  document.getElementById('pokeImg').src = 'assets/' + poke.file;
+  document.getElementById('pokeName').textContent = poke.name;
+}
+
+// Set images on page load
+setRocketImages();
 pickNewPokemon();
 restartGame();
 </script>
