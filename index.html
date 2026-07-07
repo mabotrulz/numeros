@@ -604,8 +604,7 @@ function showIntro(imgSrc, name, duration, callback) {
     u.lang = 'en-US'; u.rate = 0.85;
     u.onend = function() { setTimeout(proceed, 300); };
     window.speechSynthesis.speak(u);
-    // Fallback timeout
-    setTimeout(proceed, duration);
+    setTimeout(proceed, duration+500);
   } else {
     setTimeout(proceed, duration);
   }
@@ -624,24 +623,8 @@ function pickNewPokemon(callback) {
       document.getElementById(m.id).classList.remove('blast','hit');
     });
 
-    // Show Pokemon full screen (just name), then speak full phrase
+    // Show Pokemon → speaks name. Then show Team Rocket → speaks "contra Team Rocket"
     showIntro('assets/' + currentPoke.file, currentPoke.name, 2200, function() {
-      // Speak the full phrase: "Pikachu! … contra … Team Rocket!"
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        var u = new SpeechSynthesisUtterance(currentPoke.name + '! ... contra ... Team Rocket!');
-        u.lang = 'en-US'; u.rate = 0.85;
-        u.onend = function() {
-          showRocket();
-        };
-        window.speechSynthesis.speak(u);
-        setTimeout(showRocket, 3000); // fallback
-      } else {
-        showRocket();
-      }
-    });
-
-    var showRocket = function() {
       document.getElementById('pokeSide').style.opacity = '0';
       document.getElementById('rocketSide').style.opacity = '0';
     
@@ -677,20 +660,40 @@ function pickNewPokemon(callback) {
       overlay.appendChild(nameEl);
       overlay.classList.add('active');
       
-      setTimeout(function() {
-        overlay.classList.remove('active');
+      // Speak "contra Team Rocket!" now that they're visible
+      if (window.speechSynthesis) {
+        var u = new SpeechSynthesisUtterance('contra Team Rocket!');
+        u.lang = 'en-US'; u.rate = 0.85;
+        u.onend = function() {
+          overlay.classList.remove('active');
+          setTimeout(function() {
+            overlay.innerHTML = '<img class="intro-char" id="introImage" src="" alt=""><div class="intro-name" id="introName"></div>';
+            overlay.style.display = '';
+            overlay.style.flexDirection = '';
+            overlay.style.alignItems = '';
+            overlay.style.justifyContent = '';
+          }, 400);
+          document.getElementById('pokeSide').style.opacity = '1';
+          document.getElementById('rocketSide').style.opacity = '1';
+          if (callback) callback();
+        };
+        window.speechSynthesis.speak(u);
+      } else {
         setTimeout(function() {
-          overlay.innerHTML = '<img class="intro-char" id="introImage" src="" alt=""><div class="intro-name" id="introName"></div>';
-          overlay.style.display = '';
-          overlay.style.flexDirection = '';
-          overlay.style.alignItems = '';
-          overlay.style.justifyContent = '';
-        }, 400);
-        document.getElementById('pokeSide').style.opacity = '1';
-        document.getElementById('rocketSide').style.opacity = '1';
-        if (callback) callback();
-      }, 1500);
-    }
+          overlay.classList.remove('active');
+          setTimeout(function() {
+            overlay.innerHTML = '<img class="intro-char" id="introImage" src="" alt=""><div class="intro-name" id="introName"></div>';
+            overlay.style.display = '';
+            overlay.style.flexDirection = '';
+            overlay.style.alignItems = '';
+            overlay.style.justifyContent = '';
+          }, 400);
+          document.getElementById('pokeSide').style.opacity = '1';
+          document.getElementById('rocketSide').style.opacity = '1';
+          if (callback) callback();
+        }, 1500);
+      }
+    });
   }
 
 function loadRound() {
