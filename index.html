@@ -575,7 +575,7 @@ function getPoolForPhase(ph) {
 }
 
 // Intro animation
-function showIntro(imgSrc, name, duration, callback, opponent) {
+function showIntro(imgSrc, name, duration, callback) {
   const overlay = document.getElementById('introOverlay');
   const img = document.getElementById('introImage');
   const nameEl = document.getElementById('introName');
@@ -589,18 +589,6 @@ function showIntro(imgSrc, name, duration, callback, opponent) {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(name + '!');
     u.lang = 'en-US'; u.rate = 0.85;
-    if (opponent) {
-      u.onend = function() {
-        var u2 = new SpeechSynthesisUtterance('contra');
-        u2.lang = 'pt-PT'; u2.rate = 0.85; u2.pitch = 1.0;
-        u2.onend = function() {
-          var u3 = new SpeechSynthesisUtterance(opponent + '!');
-          u3.lang = 'en-US'; u3.rate = 0.85;
-          window.speechSynthesis.speak(u3);
-        };
-        window.speechSynthesis.speak(u2);
-      };
-    }
 
     window.speechSynthesis.speak(u);
   }
