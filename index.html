@@ -624,12 +624,27 @@ function pickNewPokemon(callback) {
       document.getElementById(m.id).classList.remove('blast','hit');
     });
 
-    // Show Pokemon full screen, speak full phrase, then show TR
-    showIntro('assets/' + currentPoke.file, currentPoke.name + '! ... ... contra ... ... Team Rocket!', 2200, function() {
+    // Show Pokemon full screen (just name), then speak full phrase
+    showIntro('assets/' + currentPoke.file, currentPoke.name, 2200, function() {
+      // Speak the full phrase: "Pikachu! … contra … Team Rocket!"
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(currentPoke.name + '! ... contra ... Team Rocket!');
+        u.lang = 'en-US'; u.rate = 0.85;
+        u.onend = function() {
+          showRocket();
+        };
+        window.speechSynthesis.speak(u);
+        setTimeout(showRocket, 3000); // fallback
+      } else {
+        showRocket();
+      }
+    });
+
+    var showRocket = function() {
       document.getElementById('pokeSide').style.opacity = '0';
       document.getElementById('rocketSide').style.opacity = '0';
     
-      // Show Team Rocket (no speech — already said in the intro)
       const overlay = document.getElementById('introOverlay');
       overlay.innerHTML = '';
       overlay.style.display = 'flex';
@@ -644,8 +659,8 @@ function pickNewPokemon(callback) {
       row.style.alignItems = 'flex-end';
       row.style.marginBottom = '8px';
       
-      ['jessie.png','james.png','meowth.png'].forEach(f => {
-        const img = document.createElement('img');
+      ['jessie.png','james.png','meowth.png'].forEach(function(f) {
+        var img = document.createElement('img');
         img.src = 'assets/' + f;
         img.style.width = 'clamp(80px, 20vw, 150px)';
         img.style.height = 'clamp(80px, 20vw, 150px)';
@@ -656,13 +671,12 @@ function pickNewPokemon(callback) {
       });
       overlay.appendChild(row);
       
-      const nameEl = document.createElement('div');
+      var nameEl = document.createElement('div');
       nameEl.className = 'intro-name';
       nameEl.textContent = 'Team Rocket!';
       overlay.appendChild(nameEl);
       overlay.classList.add('active');
       
-      // Just wait, then proceed
       setTimeout(function() {
         overlay.classList.remove('active');
         setTimeout(function() {
@@ -676,7 +690,7 @@ function pickNewPokemon(callback) {
         document.getElementById('rocketSide').style.opacity = '1';
         if (callback) callback();
       }, 1500);
-    });
+    }
   }
 
 function loadRound() {
