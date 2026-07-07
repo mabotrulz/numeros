@@ -79,7 +79,13 @@
     align-items: center; gap: 2px;
   }
   .arena-side .team-rocket-col .rocket-row {
-    display: flex; gap: 2px; align-items: flex-end;
+    display: flex; gap: 0px; align-items: flex-end;
+  }
+  .arena-side .team-rocket-col .rocket-row .rocket-img {
+    margin-right: -8px;
+  }
+  .arena-side .team-rocket-col .rocket-row .rocket-img:last-child {
+    margin-right: 0;
   }
 
   /* Attack animations per type */
@@ -623,7 +629,7 @@ function pickNewPokemon(callback) {
       document.getElementById('pokeSide').style.opacity = '0';
       document.getElementById('rocketSide').style.opacity = '0';
     
-      // Show all 3 Team Rocket members in intro
+      // Show all 3 Team Rocket members in intro — close together
       const overlay = document.getElementById('introOverlay');
       overlay.innerHTML = '';
       overlay.style.display = 'flex';
@@ -633,7 +639,8 @@ function pickNewPokemon(callback) {
       
       const row = document.createElement('div');
       row.style.display = 'flex';
-      row.style.gap = 'clamp(6px, 2vw, 16px)';
+      row.style.gap = 'clamp(2px, 1vw, 8px)';
+      row.style.marginLeft = '-8px';  // overlap slightly to bring closer
       row.style.alignItems = 'flex-end';
       row.style.marginBottom = '8px';
       
@@ -644,6 +651,7 @@ function pickNewPokemon(callback) {
         img.style.height = 'clamp(80px, 20vw, 150px)';
         img.style.objectFit = 'contain';
         img.style.animation = 'introEntrance 0.5s ease forwards';
+        img.style.marginRight = '-12px';  // overlap
         row.appendChild(img);
       });
       overlay.appendChild(row);
@@ -655,28 +663,43 @@ function pickNewPokemon(callback) {
       
       overlay.classList.add('active');
       
-      // Speak: just Team Rocket
+      // Speak Team Rocket, then proceed when done
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance('Team Rocket!');
+        var u = new SpeechSynthesisUtterance('Team Rocket!');
         u.lang = 'en-US'; u.rate = 0.85;
+        u.onend = function() {
+          // Wait a beat after speech ends, then proceed
+          setTimeout(function() {
+            overlay.classList.remove('active');
+            setTimeout(function() {
+              overlay.innerHTML = '<img class="intro-char" id="introImage" src="" alt=""><div class="intro-name" id="introName"></div>';
+              overlay.style.display = '';
+              overlay.style.flexDirection = '';
+              overlay.style.alignItems = '';
+              overlay.style.justifyContent = '';
+            }, 400);
+            document.getElementById('pokeSide').style.opacity = '1';
+            document.getElementById('rocketSide').style.opacity = '1';
+            if (callback) callback();
+          }, 500);
+        };
         window.speechSynthesis.speak(u);
+      } else {
+        setTimeout(function() {
+          overlay.classList.remove('active');
+          setTimeout(function() {
+            overlay.innerHTML = '<img class="intro-char" id="introImage" src="" alt=""><div class="intro-name" id="introName"></div>';
+            overlay.style.display = '';
+            overlay.style.flexDirection = '';
+            overlay.style.alignItems = '';
+            overlay.style.justifyContent = '';
+          }, 400);
+          document.getElementById('pokeSide').style.opacity = '1';
+          document.getElementById('rocketSide').style.opacity = '1';
+          if (callback) callback();
+        }, 1500);
       }
-      
-      setTimeout(() => {
-        overlay.classList.remove('active');
-        // Restore intro overlay for future use
-        setTimeout(() => {
-          overlay.innerHTML = '<img class="intro-char" id="introImage" src="" alt=""><div class="intro-name" id="introName"></div>';
-          overlay.style.display = '';
-          overlay.style.flexDirection = '';
-          overlay.style.alignItems = '';
-          overlay.style.justifyContent = '';
-        }, 400);
-        document.getElementById('pokeSide').style.opacity = '1';
-        document.getElementById('rocketSide').style.opacity = '1';
-        if (callback) callback();
-      }, 2200);
     });
   }
 
