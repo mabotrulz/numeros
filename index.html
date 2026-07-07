@@ -447,6 +447,7 @@ let audioInit = false;
 let slotsFilled = 0;
 let totalSlots = 1;
 let hintTimer = null;
+let newPokeIntro = false;
 const ROUNDS_PER_PHASE = 10;
 
 function initAudio() {
@@ -536,6 +537,21 @@ function pickNewPokemon() {
     document.getElementById(m.id).style.transform = '';
     document.getElementById(m.id).classList.remove('blast','hit');
   });
+  // Speak intro: Pokemon name in EN, rest in PT
+  setTimeout(() => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(currentPoke.name + '!');
+      u.lang = 'en-US'; u.rate = 0.85;
+      u.onend = () => {
+        const u2 = new SpeechSynthesisUtterance('contra Team Rocket!');
+        u2.lang = 'pt-PT'; u2.rate = 0.85; u2.pitch = 1.0;
+        window.speechSynthesis.speak(u2);
+      };
+      window.speechSynthesis.speak(u);
+    }
+  }, 200);
+  newPokeIntro = true;
 }
 
 function loadRound() {
@@ -632,11 +648,15 @@ function loadRound() {
     pool.appendChild(div);
   });
 
-  setTimeout(() => speakNumber(targetNum), 400);
+  const introDelay = newPokeIntro ? 2500 : 400;
+  newPokeIntro = false;
+  setTimeout(() => speakNumber(targetNum), introDelay);
   
   // Repeat hint every 5s
   clearInterval(hintTimer);
-  hintTimer = setInterval(() => speakNumber(targetNum), 5000);
+  setTimeout(() => {
+    hintTimer = setInterval(() => speakNumber(targetNum), 5000);
+  }, introDelay + 100);
 }
 
 function handleNumberDrop(value, slotEl, sourceEl) {
