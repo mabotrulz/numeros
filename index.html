@@ -590,28 +590,24 @@ function showIntro(imgSrc, name, duration, callback) {
   nameEl.textContent = name;
   overlay.classList.add('active');
   
+  let done = false;
+  function proceed() {
+    if (done) return; done = true;
+    overlay.classList.remove('active');
+    if (callback) setTimeout(callback, 350);
+  }
+  
   // Speak the name
   if (window.speechSynthesis && window.speechSynthesis.speak) {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(name + '!');
     u.lang = 'en-US'; u.rate = 0.85;
-    u.onend = function() {
-      setTimeout(function() {
-        overlay.classList.remove('active');
-        if (callback) setTimeout(callback, 350);
-      }, 300);
-    };
+    u.onend = function() { setTimeout(proceed, 300); };
     window.speechSynthesis.speak(u);
     // Fallback timeout
-    setTimeout(function() {
-      overlay.classList.remove('active');
-      if (callback) setTimeout(callback, 350);
-    }, duration);
+    setTimeout(proceed, duration);
   } else {
-    setTimeout(function() {
-      overlay.classList.remove('active');
-      if (callback) setTimeout(callback, 350);
-    }, duration);
+    setTimeout(proceed, duration);
   }
 }
 
@@ -675,7 +671,6 @@ function pickNewPokemon(callback) {
       
       // Speak Team Rocket, then proceed when done
       if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
         var u = new SpeechSynthesisUtterance('Team Rocket!');
         u.lang = 'en-US'; u.rate = 0.85;
         u.onend = function() {
