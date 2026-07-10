@@ -637,3 +637,435 @@ let roundInPhase = 0;
 let targetNum = 0;
 let score = 0;
 let isWin = false;
+let dragData = null;
+let audioCtx = null;
+let audioInit = false;
+let slotsFilled = 0;
+let totalSlots = 1;
+let hintTimer = null;
+const ROUNDS_PER_PHASE = 10;
+
+function initAudio() {
+  if (audioInit) return;
+  audioInit = true;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch(e) {}
+}
+document.addEventListener('touchstart', initAudio, { once: true });
+document.addEventListener('click', initAudio, { once: true });
+
+function speak(text, cb) {
+  if (!window.speechSynthesis) { if(cb) cb(); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'pt-PT'; u.rate = 0.85; u.pitch = 1.0;
+  u.onend = () => { if(cb) cb(); };
+  u.onerror = () => { if(cb) cb(); };
+  window.speechSynthesis.speak(u);
+}
+
+function speakNumber(n) {
+  const names = ['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove',
+    'dez','onze','doze','treze','catorze','quinze','dezasseis','dezassete','dezoito','dezanove','vinte'];
+  speak('Onde está o ' + (names[n] || n) + '?');
+}
+
+function sfxCorrect() {
+  try {
+    if (!audioCtx) return;
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(523, audioCtx.currentTime);
+    o.frequency.linearRampToValueAtTime(784, audioCtx.currentTime + 0.15);
+    g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.2);
+  } catch(e) {}
+}
+function sfxWrong() {
+  try {
+    if (!audioCtx) return;
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.type = 'square'; o.frequency.value = 180;
+    g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.25);
+  } catch(e) {}
+}
+function sfxBlast() {
+  try {
+    if (!audioCtx) return;
+    const bufSize = audioCtx.sampleRate * 0.5;
+    const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/(bufSize*0.2));
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+    src.connect(g); g.connect(audioCtx.destination);
+    src.start(); src.stop(audioCtx.currentTime + 0.5);
+  } catch(e) {}
+}
+
+function shuffle(a) { const arr=[...a];for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr; }
+function getNumberDigits(n) { return n < 10 ? [n] : [Math.floor(n/10), n % 10]; }
+function getPoolForPhase(ph) {
+  if (ph === 1) return shuffle([0,1,2,3,4,5,6,7,8,9]);
+  return shuffle([0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9]);
+}
+
+// Intro animation
+function showIntro(imgSrc, name, duration, callback) {
+  const overlay = document.getElementById('introOverlay');
+  const img = document.getElementById('introImage');
+  const nameEl = document.getElementById('introName');
+  
+  img.src = imgSrc;
+  nameEl.textContent = name;
+  overlay.classList.add('active');
+  
+  let done = false;
+  function proceed() {
+    if (done) return; done = true;
+    overlay.classList.remove('active');
+    if (callback) setTimeout(callback, 350);
+  }
+  
+  // Speak the name
+  if (window.speechSynthesis && window.speechSynthesis.speak) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(name + '!');
+    u.lang = 'en-US'; u.rate = 0.85;
+    u.onend = function() { setTimeout(proceed, 300); };
+    window.speechSynthesis.speak(u);
+    setTimeout(proceed, duration+500);
+  } else {
+    setTimeout(proceed, duration);
+  }
+}
+
+function pickNewPokemon(callback) {
+    let idx;
+    do { idx = Math.floor(Math.random() * POKEMON.length); } while (POKEMON[idx] === currentPoke);
+    currentPoke = POKEMON[idx];
+    pokeRocketIdx = 0;
+    setPokeImage(currentPoke);
+    setRocketImages();
+    ROCKET_MEMBERS.forEach(m => {
+      document.getElementById(m.id).style.opacity = '1';
+      document.getElementById(m.id).style.transform = '';
+      document.getElementById(m.id).classList.remove('blast','hit');
+    });
+
+    // Show Pokemon → speaks name. Then show Team Rocket → speaks "contra Team Rocket"
+    showIntro('assets/' + currentPoke.file, currentPoke.name, 2200, function() {
+      document.getElementById('pokeSide').style.opacity = '0';
+      document.getElementById('rocketSide').style.opacity = '0';
+    
+      const overlay = document.getElementById('introOverlay');
+      overlay.innerHTML = '';
+      overlay.style.display = 'flex';
+      overlay.style.flexDirection = 'column';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.gap = 'clamp(2px, 1vw, 8px)';
+      row.style.marginLeft = '-8px';
+      row.style.alignItems = 'flex-end';
+      row.style.marginBottom = '8px';
+      
+      ['jessie.png','james.png','meowth.png'].forEach(function(f) {
+        var img = document.createElement('img');
+        img.src = 'assets/' + f;
+        img.style.width = 'clamp(80px, 20vw, 150px)';
+        img.style.height = 'clamp(80px, 20vw, 150px)';
+        img.style.objectFit = 'contain';
+        img.style.animation = 'introEntrance 0.5s ease forwards';
+        img.style.marginRight = '-12px';
+        row.appendChild(img);
+      });
+      overlay.appendChild(row);
+      
+      var nameEl = document.createElement('div');
+      nameEl.className = 'intro-name';
+      nameEl.textContent = 'Team Rocket!';
+      overlay.appendChild(nameEl);
+      overlay.classList.add('active');
+      
+      // Speak "contra Team Rocket!" now that they're visible
+      if (window.speechSynthesis) {
+        var u = new SpeechSynthesisUtterance('contra Team Rocket!');
+        u.lang = 'en-US'; u.rate = 0.85;
+        u.onend = function() {
+          overlay.classList.remove('active');
+          setTimeout(function() {
+            overlay.innerHTML = '<img class="intro-char" id="introImage" src="" alt=""><div class="intro-name" id="introName"></div>';
+            overlay.style.display = '';
+            overlay.style.flexDirection = '';
+            overlay.style.alignItems = '';
+            overlay.style.justifyContent = '';
+          }, 400);
+          document.getElementById('pokeSide').style.opacity = '1';
+          document.getElementById('rocketSide').style.opacity = '1';
+          if (callback) callback();
+        };
+        window.speechSynthesis.speak(u);
+      } else {
+        setTimeout(function() {
+          overlay.classList.remove('active');
+          setTimeout(function() {
+            overlay.innerHTML = '<img class="intro-char" id="introImage" src="" alt=""><div class="intro-name" id="introName"></div>';
+            overlay.style.display = '';
+            overlay.style.flexDirection = '';
+            overlay.style.alignItems = '';
+            overlay.style.justifyContent = '';
+          }, 400);
+          document.getElementById('pokeSide').style.opacity = '1';
+          document.getElementById('rocketSide').style.opacity = '1';
+          if (callback) callback();
+        }, 1500);
+      }
+    });
+  }
+
+function loadRound() {
+  isWin = false;
+  if (phase === 1 && roundInPhase >= ROUNDS_PER_PHASE) { phase = 2; roundInPhase = 0; }
+  if (phase === 2 && roundInPhase >= ROUNDS_PER_PHASE) { onWin(); return; }
+
+  targetNum = phase === 1 ? Math.floor(Math.random() * 10) : 10 + Math.floor(Math.random() * 11);
+  const digits = getNumberDigits(targetNum);
+  totalSlots = digits.length;
+  slotsFilled = 0;
+
+  document.getElementById('phaseDisplay').textContent = phase === 1 ? '0-9' : '10-20';
+  document.getElementById('roundDisplay').textContent = (roundInPhase + 1) + '/' + ROUNDS_PER_PHASE;
+  document.getElementById('feedbackMsg').textContent = '';
+
+  // Pick Pokemon if all 3 Team Rocket have flown — with intro animation, then continue
+  if (pokeRocketIdx >= 3) {
+    pickNewPokemon(() => {
+      clearInterval(hintTimer);
+      loadRound();
+    });
+    return;
+  }
+
+  // Build slots
+  const slotsEl = document.getElementById('slotsContainer');
+  slotsEl.innerHTML = '';
+  digits.forEach((d) => {
+    const div = document.createElement('div');
+    div.className = 'slot';
+    div.dataset.expected = d;
+    div.textContent = '';
+    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+    div.addEventListener('drop', e => {
+      e.preventDefault(); div.classList.remove('drag-over');
+      try { const v=parseInt(e.dataTransfer.getData('text/plain'));if(!isNaN(v))handleNumberDrop(v,div,null); }catch(_){}
+    });
+    slotsEl.appendChild(div);
+  });
+
+  // Build pool
+  const pool = document.getElementById('numPool');
+  pool.innerHTML = '';
+  const poolNums = getPoolForPhase(phase);
+  poolNums.forEach((n) => {
+    const div = document.createElement('div');
+    div.className = 'num-tile';
+    div.draggable = true;
+    div.textContent = n;
+    div.dataset.value = n;
+    div.dataset.used = 'false';
+
+    div.addEventListener('dragstart', e => {
+      if (div.dataset.used === 'true') { e.preventDefault(); return; }
+      e.dataTransfer.setData('text/plain', n.toString());
+      div.classList.add('dragging');
+    });
+    div.addEventListener('dragend', () => div.classList.remove('dragging'));
+
+    let tx, ty;
+    div.addEventListener('touchstart', e => {
+      if (div.dataset.used === 'true') return;
+      const t = e.touches[0]; tx = t.clientX; ty = t.clientY;
+      div.classList.add('dragging');
+      dragData = { value: n, el: div };
+      const ghost = document.getElementById('dragGhost');
+      ghost.textContent = n; ghost.style.display='flex';
+      ghost.style.left=t.clientX+'px'; ghost.style.top=t.clientY+'px';
+    }, { passive: true });
+    div.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      document.getElementById('dragGhost').style.left=t.clientX+'px';
+      document.getElementById('dragGhost').style.top=t.clientY+'px';
+    }, { passive: false });
+    div.addEventListener('touchend', e => {
+      div.classList.remove('dragging');
+      document.getElementById('dragGhost').style.display='none';
+      const t = e.changedTouches[0];
+      const dx=t.clientX-tx, dy=t.clientY-ty;
+      if (Math.abs(dx)<5&&Math.abs(dy)<5) return;
+      if (dragData) {
+        const slots = document.querySelectorAll('.slot:not(.filled)');
+        for (const slot of slots) {
+          const r = slot.getBoundingClientRect();
+          if (t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom) {
+            handleNumberDrop(dragData.value, slot, dragData.el); break;
+          }
+        }
+      }
+      dragData = null;
+    }, { passive: true });
+    div.addEventListener('click', () => {
+      if (div.dataset.used === 'true') return;
+      const slot = document.querySelector('.slot:not(.filled)');
+      if (slot) handleNumberDrop(n, slot, div);
+    });
+    pool.appendChild(div);
+  });
+
+  // Speak the number immediately since intro animation already played
+  speakNumber(targetNum);
+  
+  // Repeat hint every 5s
+  clearInterval(hintTimer);
+  hintTimer = setInterval(() => speakNumber(targetNum), 5000);
+}
+
+function handleNumberDrop(value, slotEl, sourceEl) {
+  if (isWin || !slotEl || slotEl.classList.contains('filled')) return;
+  const expected = parseInt(slotEl.dataset.expected);
+
+  if (value === expected) {
+    slotEl.classList.add('filled');
+    slotEl.textContent = value;
+    slotsFilled++;
+
+    if (sourceEl) { sourceEl.dataset.used='true'; sourceEl.classList.add('placed'); }
+    else {
+      document.querySelectorAll('.num-tile').forEach(el => {
+        if (parseInt(el.dataset.value)===value && el.dataset.used==='false') { el.dataset.used='true'; el.classList.add('placed'); }
+      });
+    }
+
+    sfxCorrect();
+    score++;
+    showFeedback('✅', 'ok');
+    document.getElementById('scoreDisplay').textContent = score;
+
+    if (slotsFilled === totalSlots) {
+      setTimeout(triggerPokemonAttack, 300);
+    }
+  } else {
+    slotEl.classList.add('wrong');
+    setTimeout(() => slotEl.classList.remove('wrong'), 400);
+    sfxWrong();
+    showFeedback('❌', 'fail');
+  }
+}
+
+function triggerPokemonAttack() {
+  const type = currentPoke.type || 'normal';
+  const effect = TYPE_EFFECTS[type] || TYPE_EFFECTS.normal;
+  const pokeImg = document.getElementById('pokeImg');
+
+  // Attack effect emoji
+  const fx = document.createElement('div');
+  fx.className = 'attack-effect';
+  fx.textContent = effect.emoji;
+  document.getElementById('arena').appendChild(fx);
+  setTimeout(() => fx.remove(), 800);
+
+  // Clear old hint when attack starts
+  clearInterval(hintTimer);
+  
+  sfxBlast();
+
+  // Pokemon attacks with type animation
+  pokeImg.className = 'char-img poke-img ' + effect.cls;
+  setTimeout(() => { pokeImg.className = 'char-img poke-img'; }, 600);
+
+  // One Team Rocket member gets hit and blasts off
+  const member = ROCKET_MEMBERS[pokeRocketIdx];
+  const el = document.getElementById(member.id);
+  if (el) {
+    el.classList.add('hit');
+    setTimeout(() => {
+      el.classList.remove('hit');
+      el.classList.add('blast');
+    }, 300);
+  }
+
+  pokeRocketIdx++;
+
+  // Next round
+  setTimeout(() => {
+    roundInPhase++;
+    loadRound();
+  }, 1800);
+}
+
+function onWin() {
+  isWin = true;
+  clearInterval(hintTimer);
+  document.getElementById('winOverlay').classList.add('active');
+  speak('Parabéns! Completaste todos os números!');
+}
+
+function restartGame() {
+  phase = 1; roundInPhase = 0; score = 0; pokeRocketIdx = 3;
+  document.getElementById('winOverlay').classList.remove('active');
+  pickNewPokemon(() => {
+    loadRound();
+  });
+}
+
+function showFeedback(msg, type) {
+  const el = document.getElementById('feedbackMsg');
+  el.textContent = msg; el.className = 'msg ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 800);
+}
+
+// Initialize - set images immediately, then start game
+function setRocketImages() {
+  document.getElementById('rocketJessie').src = 'assets/jessie.png';
+  document.getElementById('rocketJames').src = 'assets/james.png';
+  document.getElementById('rocketMeowth').src = 'assets/meowth.png';
+}
+
+function setPokeImage(poke) {
+  document.getElementById('pokeImg').src = 'assets/' + poke.file;
+  document.getElementById('pokeName').textContent = poke.name;
+}
+
+// Start overlay
+function startGame() {
+  document.getElementById('startOverlay').classList.add('hidden');
+  initAudio();
+  setRocketImages();
+  pickNewPokemon(() => {
+    phase = 1; roundInPhase = 0; score = 0;
+    document.getElementById('winOverlay').classList.remove('active');
+    loadRound();
+  });
+}
+
+// Set images on page load (hidden until start)
+setRocketImages();
+document.getElementById('pokeImg').src = 'assets/' + POKEMON[0].file;
+document.getElementById('pokeName').textContent = POKEMON[0].name;
+</script>
+</body>
+</html>
