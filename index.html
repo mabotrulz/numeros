@@ -1,461 +1,461 @@
-1|<!DOCTYPE html>
-2|<html lang="pt">
-3|<head>
-4|<meta charset="UTF-8">
-5|<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-6|<title>Joga com Neo — Números</title>
-7|<style>
-8|  * { margin: 0; padding: 0; box-sizing: border-box; }
-9|  body {
-10|    background: #1a1a2e;
-11|    font-family: 'Segoe UI', system-ui, sans-serif;
-12|    display: flex; justify-content: center; align-items: center;
-13|    min-height: 100vh; min-height: 100dvh;
-14|    overflow: hidden; touch-action: none; user-select: none;
-15|  }
-16|
-17|  .game {
-18|    width: 100vw; height: 100vh; height: 100dvh;
-19|    max-width: 800px;
-20|    background: linear-gradient(180deg, #1a1a2e, #16213e, #0f3460);
-21|    display: flex; flex-direction: column;
-22|    position: relative; overflow: hidden;
-23|  }
-24|
-25|  .header {
-26|    text-align: center; padding: 6px 12px 2px;
-27|    flex-shrink: 0; z-index: 2; position: relative;
-28|  }
-29|  .header h1 {
-30|    color: #f1c40f; font-size: clamp(13px, 3vw, 18px);
-31|    font-weight: 900; letter-spacing: 2px;
-32|  }
-33|  .header .hint {
-34|    color: #888; font-size: clamp(9px, 2vw, 12px);
-35|    min-height: 16px;
-36|  }
-37|
-38|  /* Arena - transparent bg */
-39|  .arena {
-40|    flex-shrink: 0;
-41|    height: clamp(220px, 48vw, 340px);
-42|    position: relative;
-43|    margin: 0 4px;
-44|    z-index: 2;
-45|  }
-46|
-47|  .arena-side {
-48|    position: absolute;
-49|    bottom: 0;
-50|    display: flex; flex-direction: column; align-items: center;
-51|    z-index: 3;
-52|  }
-53|  .arena-side.left { left: 5%; }
-54|  .arena-side.right { right: 5%; }
-55|
-56|  .arena-side .char-img {
-57|    object-fit: contain;
-58|    image-rendering: auto;
-59|    transition: all 0.3s;
-60|  }
-61|  .arena-side .poke-img {
-62|    width: clamp(140px, 32vw, 240px);
-63|    height: clamp(140px, 32vw, 240px);
-64|  }
-65|  .arena-side .rocket-img {
-66|    width: clamp(110px, 26vw, 190px);
-67|    height: clamp(110px, 26vw, 190px);
-68|  }
-69|  .arena-side .char-label {
-70|    font-size: clamp(8px, 1.6vw, 11px);
-71|    color: #aaa;
-72|    font-weight: 600;
-73|    letter-spacing: 1px;
-74|    margin-top: 2px;
-75|  }
-76|
-77|  .arena-side .team-rocket-col {
-78|    display: flex; flex-direction: column;
-79|    align-items: center; gap: 2px;
-80|  }
-81|  .arena-side .team-rocket-col .rocket-row {
-82|    display: flex; gap: 0px; align-items: flex-end;
-83|  }
-84|  .arena-side .team-rocket-col .rocket-row .rocket-img {
-85|    margin-right: -8px;
-86|  }
-87|  .arena-side .team-rocket-col .rocket-row .rocket-img:last-child {
-88|    margin-right: 0;
-89|  }
-90|
-91|  /* Attack animations per type */
-92|  .arena-side.left .poke-img.attack-electric {
-93|    animation: attackElectric 0.5s ease;
-94|  }
-95|  @keyframes attackElectric {
-96|    0% { transform: translateX(0) scale(1); filter: brightness(1); }
-97|    25% { transform: translateX(80px) scale(1.3); filter: brightness(2) hue-rotate(60deg); }
-98|    50% { transform: translateX(-10px) scale(0.8); filter: brightness(1.5); }
-99|    100% { transform: translateX(0) scale(1); filter: brightness(1); }
-100|  }
-101|
-102|  .arena-side.left .poke-img.attack-fire {
-103|    animation: attackFire 0.5s ease;
-104|  }
-105|  @keyframes attackFire {
-106|    0% { transform: translateX(0) scale(1); opacity: 1; }
-107|    30% { transform: translateX(70px) scale(1.4); opacity: 0.7; filter: saturate(3) hue-rotate(-30deg); }
-108|    60% { transform: translateX(-5px) scale(0.85); filter: saturate(1); }
-109|    100% { transform: translateX(0) scale(1); opacity: 1; }
-110|  }
-111|
-112|  .arena-side.left .poke-img.attack-water {
-113|    animation: attackWater 0.5s ease;
-114|  }
-115|  @keyframes attackWater {
-116|    0% { transform: translateX(0) translateY(0); }
-117|    30% { transform: translateX(60px) translateY(-10px) scale(1.2); }
-118|    60% { transform: translateX(-8px) translateY(5px) scale(0.9); }
-119|    100% { transform: translateX(0) translateY(0); }
-120|  }
-121|
-122|  .arena-side.left .poke-img.attack-psychic {
-123|    animation: attackPsychic 0.5s ease;
-124|  }
-125|  @keyframes attackPsychic {
-126|    0% { transform: translateX(0) scale(1) rotate(0); }
-127|    25% { transform: translateX(50px) scale(1.3) rotate(-15deg); filter: hue-rotate(180deg); }
-128|    50% { transform: translateX(-5px) scale(0.8) rotate(10deg); }
-129|    100% { transform: translateX(0) scale(1) rotate(0); filter: none; }
-130|  }
-131|
-132|  .arena-side.left .poke-img.attack-ghost {
-133|    animation: attackGhost 0.5s ease;
-134|  }
-135|  @keyframes attackGhost {
-136|    0% { transform: translateX(0) scale(1); opacity: 1; }
-137|    20% { opacity: 0.3; }
-138|    40% { transform: translateX(65px) scale(1.3); opacity: 0.8; filter: saturate(0); }
-139|    60% { opacity: 0.5; transform: translateX(-8px) scale(0.8); }
-140|    100% { transform: translateX(0) scale(1); opacity: 1; filter: none; }
-141|  }
-142|
-143|  .arena-side.left .poke-img.attack-fairy {
-144|    animation: attackFairy 0.5s ease;
-145|  }
-146|  @keyframes attackFairy {
-147|    0% { transform: translateX(0) scale(1) rotate(0); }
-148|    30% { transform: translateX(55px) scale(1.2) rotate(10deg); filter: hue-rotate(90deg) brightness(1.3); }
-149|    60% { transform: translateX(-5px) scale(0.9) rotate(-5deg); }
-150|    100% { transform: translateX(0) scale(1) rotate(0); filter: none; }
-151|  }
-152|
-153|  .arena-side.left .poke-img.attack-dragon {
-154|    animation: attackDragon 0.5s ease;
-155|  }
-156|  @keyframes attackDragon {
-157|    0% { transform: translateX(0) scale(1); }
-158|    20% { transform: translateX(30px) scale(1.5); filter: hue-rotate(45deg) saturate(2); }
-159|    50% { transform: translateX(85px) scale(1.1); filter: hue-rotate(90deg); }
-160|    70% { transform: translateX(-12px) scale(0.8); }
-161|    100% { transform: translateX(0) scale(1); filter: none; }
-162|  }
-163|
-164|  .arena-side.left .poke-img.attack-normal {
-165|    animation: attackNormal 0.5s ease;
-166|  }
-167|  @keyframes attackNormal {
-168|    0% { transform: translateX(0); }
-169|    30% { transform: translateX(75px) scale(1.25); }
-170|    60% { transform: translateX(-10px) scale(0.85); }
-171|    100% { transform: translateX(0); }
-172|  }
-173|
-174|  .arena-side.right .rocket-img.hit {
-175|    animation: hitShake 0.4s ease;
-176|  }
-177|  @keyframes hitShake {
-178|    0%,100% { transform: translateX(0) rotate(0); }
-179|    20% { transform: translateX(12px) rotate(-5deg); }
-180|    40% { transform: translateX(-8px) rotate(5deg); }
-181|    60% { transform: translateX(6px) rotate(-3deg); }
-182|  }
-183|
-184|  .arena-side.right .rocket-img.blast {
-185|    animation: blastOff 1.2s ease forwards;
-186|  }
-187|  @keyframes blastOff {
-188|    0% { transform: translateX(0) translateY(0) scale(1); opacity: 1; }
-189|    20% { transform: translateX(0) translateY(0) scale(1.1); opacity: 1; }
-190|    100% { transform: translateX(80px) translateY(-300px) scale(0.2) rotate(30deg); opacity: 0; }
-191|  }
-192|
-193|  .attack-effect {
-194|    position: absolute;
-195|    z-index: 5;
-196|    pointer-events: none;
-197|    font-size: clamp(35px, 9vw, 70px);
-198|    animation: effectFly 0.6s ease forwards;
-199|    top: 25%; left: 30%;
-200|  }
-201|  @keyframes effectFly {
-202|    0% { transform: translateX(0) scale(0.3) rotate(0); opacity: 1; }
-203|    50% { transform: translateX(40%) scale(1.1) rotate(20deg); opacity: 1; }
-204|    100% { transform: translateX(80%) scale(1.3) rotate(-10deg); opacity: 0; }
-205|  }
-206|
-207|  /* Slots */
-208|  .slots-area {
-209|    flex: 2;
-210|    display: flex; flex-direction: column;
-211|    justify-content: center; align-items: center;
-212|    padding: 2px 8px;
-213|    min-height: 0; z-index: 2; position: relative;
-214|  }
-215|  .slots-row {
-216|    display: flex; justify-content: center;
-217|    gap: 8px; padding: 8px;
-218|  }
-219|  .slot {
-220|    width: clamp(44px, 10vw, 68px);
-221|    height: clamp(52px, 12vw, 76px);
-222|    border: 3px dashed #f1c40f;
-223|    border-radius: 10px;
-224|    display: flex; align-items: center; justify-content: center;
-225|    font-size: clamp(28px, 7vw, 48px);
-226|    font-weight: 700; color: #f1c40f;
-227|    transition: all 0.25s;
-228|    background: rgba(241,196,15,0.05);
-229|  }
-230|  .slot.filled {
-231|    border-style: solid;
-232|    background: rgba(241,196,15,0.15);
-233|    animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
-234|  }
-235|  .slot.wrong {
-236|    border-color: #e74c3c;
-237|    background: rgba(231,76,60,0.2);
-238|    animation: shake 0.35s ease;
-239|  }
-240|  .slot.drag-over {
-241|    border-color: #4ecca3;
-242|    background: rgba(78,204,163,0.1);
-243|    transform: scale(1.08);
-244|  }
-245|
-246|  @keyframes popIn { 0%{transform:scale(0.7)}100%{transform:scale(1)} }
-247|  @keyframes shake { 0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)} }
-248|
-249|  .num-pool {
-250|    display: flex; flex-wrap: wrap;
-251|    justify-content: center; gap: 5px;
-252|    padding: 6px 10px;
-253|    flex-shrink: 0; min-height: 44px; max-height: 150px;
-254|    overflow-y: auto; z-index: 2; position: relative;
-255|  }
-256|  .num-tile {
-257|    width: clamp(40px, 9vw, 58px);
-258|    height: clamp(44px, 10vw, 62px);
-259|    background: linear-gradient(135deg, #f1c40f, #f39c12);
-260|    color: #1a1a2e;
-261|    font-size: clamp(22px, 5vw, 36px);
-262|    font-weight: 700; border-radius: 10px;
-263|    display: flex; align-items: center; justify-content: center;
-264|    cursor: grab; touch-action: none;
-265|    transition: transform 0.15s, opacity 0.3s;
-266|    box-shadow: 0 3px 8px rgba(241,196,15,0.3);
-267|    border-bottom: 3px solid #d4a017;
-268|  }
-269|  .num-tile:active { cursor: grabbing; }
-270|  .num-tile:hover { transform: translateY(-2px); }
-271|  .num-tile.dragging { opacity: 0.35; transform: scale(0.9); }
-272|  .num-tile.placed { opacity: 0; pointer-events: none; transform: scale(0.4); }
-273|
-274|  .feedback {
-275|    text-align: center; padding: 2px 12px;
-276|    min-height: 24px; flex-shrink: 0; z-index: 2; position: relative;
-277|  }
-278|  .feedback .msg { font-size: clamp(13px, 2.5vw, 18px); font-weight: 600; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
-279|  .feedback .msg.ok { color: #4ecca3; }
-280|  .feedback .msg.fail { color: #e74c3c; }
-281|
-282|  .stats-row {
-283|    display: flex; justify-content: center; gap: 20px;
-284|    padding: 2px 12px;
-285|    flex-shrink: 0; z-index: 2; position: relative;
-286|  }
-287|  .stats-row .stat { text-align: center; }
-288|  .stats-row .stat .val { font-size: clamp(16px, 3.5vw, 24px); font-weight: 700; color: #fff; }
-289|  .stats-row .stat .label { font-size: clamp(8px, 1.6vw, 11px); color: #888; text-transform: uppercase; letter-spacing: 1px; }
-290|
-291|  .win-overlay {
-292|    position: absolute; inset: 0;
-293|    background: rgba(15,52,96,0.93);
-294|    display: flex; flex-direction: column;
-295|    justify-content: center; align-items: center;
-296|    z-index: 100; opacity: 0; pointer-events: none;
-297|    transition: opacity 0.5s; padding: 30px; text-align: center;
-298|  }
-299|  .win-overlay.active { opacity: 1; pointer-events: all; }
-300|  .win-overlay h2 { font-size: clamp(28px,8vw,48px); color: #4ecca3; margin: 4px 0; }
-301|  .win-overlay .sub { font-size: clamp(14px,3vw,18px); color: #aaa; margin-bottom: 8px; }
-302|  .win-overlay button {
-303|    padding: 12px 36px; font-size: clamp(14px,3vw,18px); font-weight: 700;
-304|    background: #4ecca3; color: #1a1a2e; border: none; border-radius: 12px; cursor: pointer; letter-spacing: 1px; transition: transform 0.2s; margin-top: 8px;
-305|  }
-306|  .win-overlay button:hover { transform: scale(1.05); }
-307|
-308|  /* Character intro animation */
-309|  .intro-overlay {
-310|    position: absolute; inset: 0;
-311|    background: rgba(10,10,20,0.92);
-312|    display: flex; flex-direction: column;
-313|    justify-content: center; align-items: center;
-314|    z-index: 160;
-315|    opacity: 0; pointer-events: none;
-316|    transition: opacity 0.3s;
-317|  }
-318|  .intro-overlay.active { opacity: 1; pointer-events: all; }
-319|  .intro-overlay .intro-char {
-320|    width: clamp(160px, 40vw, 300px);
-321|    height: clamp(160px, 40vw, 300px);
-322|    object-fit: contain;
-323|    transition: all 0.8s cubic-bezier(0.34, 1.2, 0.64, 1);
-324|    animation: introEntrance 0.5s ease forwards;
-325|  }
-326|  @keyframes introEntrance {
-327|    0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
-328|    60% { transform: scale(1.1) rotate(3deg); opacity: 1; }
-329|    100% { transform: scale(1) rotate(0); opacity: 1; }
-330|  }
-331|  .intro-overlay .intro-name {
-332|    font-size: clamp(28px, 8vw, 56px);
-333|    font-weight: 800;
-334|    color: #f1c40f;
-335|    margin-top: 8px;
-336|    text-shadow: 0 0 30px rgba(241,196,15,0.3);
-337|    animation: introNameIn 0.4s ease 0.3s forwards;
-338|    opacity: 0;
-339|  }
-340|  @keyframes introNameIn {
-341|    0% { transform: translateY(20px); opacity: 0; }
-342|    100% { transform: translateY(0); opacity: 1; }
-343|  }
-344|  .intro-overlay .intro-vs {
-345|    font-size: clamp(20px, 5vw, 36px);
-346|    color: #e74c3c;
-347|    font-weight: 700;
-348|    margin: 4px 0;
-349|    animation: introNameIn 0.3s ease 0.1s forwards;
-350|    opacity: 0;
-351|  }
-352|
-353|  /* Start screen */
-354|  .start-overlay {
-355|    position: absolute; inset: 0;
-356|    background: rgba(15,52,96,0.95);
-357|    display: flex; flex-direction: column;
-358|    justify-content: center; align-items: center;
-359|    z-index: 150;
-360|    padding: 30px; text-align: center;
-361|    transition: opacity 0.5s;
-362|  }
-363|  .start-overlay.hidden { opacity: 0; pointer-events: none; }
-364|  .start-overlay .logo { font-size: clamp(50px, 14vw, 90px); margin-bottom: 8px; }
-365|  .start-overlay h2 { font-size: clamp(24px, 7vw, 40px); color: #f1c40f; margin-bottom: 4px; }
-366|  .start-overlay p { font-size: clamp(13px, 3vw, 17px); color: #aaa; margin-bottom: 24px; }
-367|  .start-overlay .start-btn {
-368|    padding: 16px 48px; font-size: clamp(18px, 4vw, 24px); font-weight: 700;
-369|    background: linear-gradient(135deg, #f1c40f, #f39c12);
-370|    color: #1a1a2e; border: none; border-radius: 16px;
-371|    cursor: pointer; letter-spacing: 2px;
-372|    transition: transform 0.2s; box-shadow: 0 6px 25px rgba(241,196,15,0.3);
-373|  }
-374|  .start-overlay .start-btn:hover { transform: scale(1.08); }
-375|
-376|  .drag-ghost {
-377|    position: fixed; pointer-events: none; z-index: 200;
-378|    width: clamp(40px,9vw,58px); height: clamp(44px,10vw,62px);
-379|    background: linear-gradient(135deg,#f1c40f,#f39c12); color: #1a1a2e;
-380|    font-size: clamp(22px,5vw,36px); font-weight: 700; border-radius: 10px;
-381|    display: flex; align-items: center; justify-content: center;
-382|    box-shadow: 0 8px 25px rgba(0,0,0,0.3); transform: translate(-50%,-50%) scale(1.15);
-383|    border-bottom: 3px solid #d4a017;
-384|  }
-385|
-386|  @media (max-width: 400px) {
-387|    .slot { width: clamp(36px,12vw,48px); height: clamp(42px,14vw,54px); font-size: 22px; }
-388|    .num-tile { width: clamp(34px,11vw,44px); height: clamp(38px,12vw,48px); font-size: 18px; }
-389|    .arena-side .poke-img { width: clamp(100px,24vw,140px); height: clamp(100px,24vw,140px); }
-390|    .arena-side .rocket-img { width: clamp(70px,18vw,110px); height: clamp(70px,18vw,110px); }
-391|  }
-392|</style>
-393|</head>
-394|<body>
-395|
-396|<div class="game" id="game">
-397|  <div class="header">
-398|    <h1>⚡ Números ⚡</h1>
-399|    <div class="hint" id="phraseHint">Onde está o número?</div>
-400|  </div>
-401|
-402|  <!-- Arena - transparent -->
-403|  <div class="arena" id="arena">
-404|    <div class="arena-side left" id="pokeSide">
-405|      <img class="char-img poke-img" id="pokeImg" src="" alt="Pokémon">
-406|      <div class="char-label" id="pokeName">Pikachu</div>
-407|    </div>
-408|    <div class="arena-side right" id="rocketSide">
-409|      <div class="team-rocket-col">
-410|        <div class="rocket-row" id="rocketRow">
-411|          <img class="char-img rocket-img" id="rocketJessie" src="" alt="Jessie">
-412|          <img class="char-img rocket-img" id="rocketJames" src="" alt="James">
-413|          <img class="char-img rocket-img" id="rocketMeowth" src="" alt="Meowth">
-414|        </div>
-415|        <div class="char-label">Team Rocket</div>
-416|      </div>
-417|    </div>
-418|  </div>
-419|
-420|  <!-- Slots -->
-421|  <div class="slots-area">
-422|    <div class="slots-row" id="slotsContainer"></div>
-423|  </div>
-424|
-425|  <div class="num-pool" id="numPool"></div>
-426|
-427|  <div class="feedback"><div class="msg" id="feedbackMsg"></div></div>
-428|
-429|  <div class="stats-row">
-430|    <div class="stat"><div class="val" id="scoreDisplay">0</div><div class="label">⭐</div></div>
-431|    <div class="stat"><div class="val" id="phaseDisplay">0-9</div><div class="label">Fase</div></div>
-432|    <div class="stat"><div class="val" id="roundDisplay">0/10</div><div class="label">Ronda</div></div>
-433|  </div>
-434|
-435|  <div class="win-overlay" id="winOverlay">
-436|    <h2>🏆 Parabéns!</h2>
-437|    <div class="sub">Completaste todos os números!</div>
-438|    <button onclick="restartGame()">Jogar outra vez →</button>
-439|  </div>
-440|
-441|  <!-- Intro overlay -->
-442|  <div class="intro-overlay" id="introOverlay">
-443|    <img class="intro-char" id="introImage" src="" alt="">
-444|    <div class="intro-name" id="introName"></div>
-445|  </div>
-446|
-447|  <!-- Start overlay -->
-448|  <div class="start-overlay" id="startOverlay">
-449|    <div class="logo">⚡</div>
-450|    <h2>Números</h2>
-451|    <p>Ajuda o Pokémon a derrotar a Team Rocket!</p>
-452|    <button class="start-btn" onclick="startGame()">▶ COMEÇAR</button>
-453|  </div>
-454|</div>
-455|
-456|<div class="drag-ghost" id="dragGhost" style="display:none"></div>
-457|
-458|<script>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Joga com Neo — Números</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; min-height: 100dvh;
+    overflow: hidden; touch-action: none; user-select: none;
+  }
+
+  .game {
+    width: 100vw; height: 100vh; height: 100dvh;
+    max-width: 800px;
+    background: linear-gradient(180deg, #1a1a2e, #16213e, #0f3460);
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+
+  .header {
+    text-align: center; padding: 6px 12px 2px;
+    flex-shrink: 0; z-index: 2; position: relative;
+  }
+  .header h1 {
+    color: #f1c40f; font-size: clamp(13px, 3vw, 18px);
+    font-weight: 900; letter-spacing: 2px;
+  }
+  .header .hint {
+    color: #888; font-size: clamp(9px, 2vw, 12px);
+    min-height: 16px;
+  }
+
+  /* Arena - transparent bg */
+  .arena {
+    flex-shrink: 0;
+    height: clamp(220px, 48vw, 340px);
+    position: relative;
+    margin: 0 4px;
+    z-index: 2;
+  }
+
+  .arena-side {
+    position: absolute;
+    bottom: 0;
+    display: flex; flex-direction: column; align-items: center;
+    z-index: 3;
+  }
+  .arena-side.left { left: 5%; }
+  .arena-side.right { right: 5%; }
+
+  .arena-side .char-img {
+    object-fit: contain;
+    image-rendering: auto;
+    transition: all 0.3s;
+  }
+  .arena-side .poke-img {
+    width: clamp(140px, 32vw, 240px);
+    height: clamp(140px, 32vw, 240px);
+  }
+  .arena-side .rocket-img {
+    width: clamp(110px, 26vw, 190px);
+    height: clamp(110px, 26vw, 190px);
+  }
+  .arena-side .char-label {
+    font-size: clamp(8px, 1.6vw, 11px);
+    color: #aaa;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .arena-side .team-rocket-col {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+  }
+  .arena-side .team-rocket-col .rocket-row {
+    display: flex; gap: 0px; align-items: flex-end;
+  }
+  .arena-side .team-rocket-col .rocket-row .rocket-img {
+    margin-right: -8px;
+  }
+  .arena-side .team-rocket-col .rocket-row .rocket-img:last-child {
+    margin-right: 0;
+  }
+
+  /* Attack animations per type */
+  .arena-side.left .poke-img.attack-electric {
+    animation: attackElectric 0.5s ease;
+  }
+  @keyframes attackElectric {
+    0% { transform: translateX(0) scale(1); filter: brightness(1); }
+    25% { transform: translateX(80px) scale(1.3); filter: brightness(2) hue-rotate(60deg); }
+    50% { transform: translateX(-10px) scale(0.8); filter: brightness(1.5); }
+    100% { transform: translateX(0) scale(1); filter: brightness(1); }
+  }
+
+  .arena-side.left .poke-img.attack-fire {
+    animation: attackFire 0.5s ease;
+  }
+  @keyframes attackFire {
+    0% { transform: translateX(0) scale(1); opacity: 1; }
+    30% { transform: translateX(70px) scale(1.4); opacity: 0.7; filter: saturate(3) hue-rotate(-30deg); }
+    60% { transform: translateX(-5px) scale(0.85); filter: saturate(1); }
+    100% { transform: translateX(0) scale(1); opacity: 1; }
+  }
+
+  .arena-side.left .poke-img.attack-water {
+    animation: attackWater 0.5s ease;
+  }
+  @keyframes attackWater {
+    0% { transform: translateX(0) translateY(0); }
+    30% { transform: translateX(60px) translateY(-10px) scale(1.2); }
+    60% { transform: translateX(-8px) translateY(5px) scale(0.9); }
+    100% { transform: translateX(0) translateY(0); }
+  }
+
+  .arena-side.left .poke-img.attack-psychic {
+    animation: attackPsychic 0.5s ease;
+  }
+  @keyframes attackPsychic {
+    0% { transform: translateX(0) scale(1) rotate(0); }
+    25% { transform: translateX(50px) scale(1.3) rotate(-15deg); filter: hue-rotate(180deg); }
+    50% { transform: translateX(-5px) scale(0.8) rotate(10deg); }
+    100% { transform: translateX(0) scale(1) rotate(0); filter: none; }
+  }
+
+  .arena-side.left .poke-img.attack-ghost {
+    animation: attackGhost 0.5s ease;
+  }
+  @keyframes attackGhost {
+    0% { transform: translateX(0) scale(1); opacity: 1; }
+    20% { opacity: 0.3; }
+    40% { transform: translateX(65px) scale(1.3); opacity: 0.8; filter: saturate(0); }
+    60% { opacity: 0.5; transform: translateX(-8px) scale(0.8); }
+    100% { transform: translateX(0) scale(1); opacity: 1; filter: none; }
+  }
+
+  .arena-side.left .poke-img.attack-fairy {
+    animation: attackFairy 0.5s ease;
+  }
+  @keyframes attackFairy {
+    0% { transform: translateX(0) scale(1) rotate(0); }
+    30% { transform: translateX(55px) scale(1.2) rotate(10deg); filter: hue-rotate(90deg) brightness(1.3); }
+    60% { transform: translateX(-5px) scale(0.9) rotate(-5deg); }
+    100% { transform: translateX(0) scale(1) rotate(0); filter: none; }
+  }
+
+  .arena-side.left .poke-img.attack-dragon {
+    animation: attackDragon 0.5s ease;
+  }
+  @keyframes attackDragon {
+    0% { transform: translateX(0) scale(1); }
+    20% { transform: translateX(30px) scale(1.5); filter: hue-rotate(45deg) saturate(2); }
+    50% { transform: translateX(85px) scale(1.1); filter: hue-rotate(90deg); }
+    70% { transform: translateX(-12px) scale(0.8); }
+    100% { transform: translateX(0) scale(1); filter: none; }
+  }
+
+  .arena-side.left .poke-img.attack-normal {
+    animation: attackNormal 0.5s ease;
+  }
+  @keyframes attackNormal {
+    0% { transform: translateX(0); }
+    30% { transform: translateX(75px) scale(1.25); }
+    60% { transform: translateX(-10px) scale(0.85); }
+    100% { transform: translateX(0); }
+  }
+
+  .arena-side.right .rocket-img.hit {
+    animation: hitShake 0.4s ease;
+  }
+  @keyframes hitShake {
+    0%,100% { transform: translateX(0) rotate(0); }
+    20% { transform: translateX(12px) rotate(-5deg); }
+    40% { transform: translateX(-8px) rotate(5deg); }
+    60% { transform: translateX(6px) rotate(-3deg); }
+  }
+
+  .arena-side.right .rocket-img.blast {
+    animation: blastOff 1.2s ease forwards;
+  }
+  @keyframes blastOff {
+    0% { transform: translateX(0) translateY(0) scale(1); opacity: 1; }
+    20% { transform: translateX(0) translateY(0) scale(1.1); opacity: 1; }
+    100% { transform: translateX(80px) translateY(-300px) scale(0.2) rotate(30deg); opacity: 0; }
+  }
+
+  .attack-effect {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    font-size: clamp(35px, 9vw, 70px);
+    animation: effectFly 0.6s ease forwards;
+    top: 25%; left: 30%;
+  }
+  @keyframes effectFly {
+    0% { transform: translateX(0) scale(0.3) rotate(0); opacity: 1; }
+    50% { transform: translateX(40%) scale(1.1) rotate(20deg); opacity: 1; }
+    100% { transform: translateX(80%) scale(1.3) rotate(-10deg); opacity: 0; }
+  }
+
+  /* Slots */
+  .slots-area {
+    flex: 2;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 2px 8px;
+    min-height: 0; z-index: 2; position: relative;
+  }
+  .slots-row {
+    display: flex; justify-content: center;
+    gap: 8px; padding: 8px;
+  }
+  .slot {
+    width: clamp(44px, 10vw, 68px);
+    height: clamp(52px, 12vw, 76px);
+    border: 3px dashed #f1c40f;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(28px, 7vw, 48px);
+    font-weight: 700; color: #f1c40f;
+    transition: all 0.25s;
+    background: rgba(241,196,15,0.05);
+  }
+  .slot.filled {
+    border-style: solid;
+    background: rgba(241,196,15,0.15);
+    animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .slot.wrong {
+    border-color: #e74c3c;
+    background: rgba(231,76,60,0.2);
+    animation: shake 0.35s ease;
+  }
+  .slot.drag-over {
+    border-color: #4ecca3;
+    background: rgba(78,204,163,0.1);
+    transform: scale(1.08);
+  }
+
+  @keyframes popIn { 0%{transform:scale(0.7)}100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)} }
+
+  .num-pool {
+    display: flex; flex-wrap: wrap;
+    justify-content: center; gap: 5px;
+    padding: 6px 10px;
+    flex-shrink: 0; min-height: 44px; max-height: 150px;
+    overflow-y: auto; z-index: 2; position: relative;
+  }
+  .num-tile {
+    width: clamp(40px, 9vw, 58px);
+    height: clamp(44px, 10vw, 62px);
+    background: linear-gradient(135deg, #f1c40f, #f39c12);
+    color: #1a1a2e;
+    font-size: clamp(22px, 5vw, 36px);
+    font-weight: 700; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: grab; touch-action: none;
+    transition: transform 0.15s, opacity 0.3s;
+    box-shadow: 0 3px 8px rgba(241,196,15,0.3);
+    border-bottom: 3px solid #d4a017;
+  }
+  .num-tile:active { cursor: grabbing; }
+  .num-tile:hover { transform: translateY(-2px); }
+  .num-tile.dragging { opacity: 0.35; transform: scale(0.9); }
+  .num-tile.placed { opacity: 0; pointer-events: none; transform: scale(0.4); }
+
+  .feedback {
+    text-align: center; padding: 2px 12px;
+    min-height: 24px; flex-shrink: 0; z-index: 2; position: relative;
+  }
+  .feedback .msg { font-size: clamp(13px, 2.5vw, 18px); font-weight: 600; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+  .feedback .msg.ok { color: #4ecca3; }
+  .feedback .msg.fail { color: #e74c3c; }
+
+  .stats-row {
+    display: flex; justify-content: center; gap: 20px;
+    padding: 2px 12px;
+    flex-shrink: 0; z-index: 2; position: relative;
+  }
+  .stats-row .stat { text-align: center; }
+  .stats-row .stat .val { font-size: clamp(16px, 3.5vw, 24px); font-weight: 700; color: #fff; }
+  .stats-row .stat .label { font-size: clamp(8px, 1.6vw, 11px); color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+  .win-overlay {
+    position: absolute; inset: 0;
+    background: rgba(15,52,96,0.93);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 100; opacity: 0; pointer-events: none;
+    transition: opacity 0.5s; padding: 30px; text-align: center;
+  }
+  .win-overlay.active { opacity: 1; pointer-events: all; }
+  .win-overlay h2 { font-size: clamp(28px,8vw,48px); color: #4ecca3; margin: 4px 0; }
+  .win-overlay .sub { font-size: clamp(14px,3vw,18px); color: #aaa; margin-bottom: 8px; }
+  .win-overlay button {
+    padding: 12px 36px; font-size: clamp(14px,3vw,18px); font-weight: 700;
+    background: #4ecca3; color: #1a1a2e; border: none; border-radius: 12px; cursor: pointer; letter-spacing: 1px; transition: transform 0.2s; margin-top: 8px;
+  }
+  .win-overlay button:hover { transform: scale(1.05); }
+
+  /* Character intro animation */
+  .intro-overlay {
+    position: absolute; inset: 0;
+    background: rgba(10,10,20,0.92);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 160;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .intro-overlay.active { opacity: 1; pointer-events: all; }
+  .intro-overlay .intro-char {
+    width: clamp(160px, 40vw, 300px);
+    height: clamp(160px, 40vw, 300px);
+    object-fit: contain;
+    transition: all 0.8s cubic-bezier(0.34, 1.2, 0.64, 1);
+    animation: introEntrance 0.5s ease forwards;
+  }
+  @keyframes introEntrance {
+    0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+    60% { transform: scale(1.1) rotate(3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  .intro-overlay .intro-name {
+    font-size: clamp(28px, 8vw, 56px);
+    font-weight: 800;
+    color: #f1c40f;
+    margin-top: 8px;
+    text-shadow: 0 0 30px rgba(241,196,15,0.3);
+    animation: introNameIn 0.4s ease 0.3s forwards;
+    opacity: 0;
+  }
+  @keyframes introNameIn {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  .intro-overlay .intro-vs {
+    font-size: clamp(20px, 5vw, 36px);
+    color: #e74c3c;
+    font-weight: 700;
+    margin: 4px 0;
+    animation: introNameIn 0.3s ease 0.1s forwards;
+    opacity: 0;
+  }
+
+  /* Start screen */
+  .start-overlay {
+    position: absolute; inset: 0;
+    background: rgba(15,52,96,0.95);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 150;
+    padding: 30px; text-align: center;
+    transition: opacity 0.5s;
+  }
+  .start-overlay.hidden { opacity: 0; pointer-events: none; }
+  .start-overlay .logo { font-size: clamp(50px, 14vw, 90px); margin-bottom: 8px; }
+  .start-overlay h2 { font-size: clamp(24px, 7vw, 40px); color: #f1c40f; margin-bottom: 4px; }
+  .start-overlay p { font-size: clamp(13px, 3vw, 17px); color: #aaa; margin-bottom: 24px; }
+  .start-overlay .start-btn {
+    padding: 16px 48px; font-size: clamp(18px, 4vw, 24px); font-weight: 700;
+    background: linear-gradient(135deg, #f1c40f, #f39c12);
+    color: #1a1a2e; border: none; border-radius: 16px;
+    cursor: pointer; letter-spacing: 2px;
+    transition: transform 0.2s; box-shadow: 0 6px 25px rgba(241,196,15,0.3);
+  }
+  .start-overlay .start-btn:hover { transform: scale(1.08); }
+
+  .drag-ghost {
+    position: fixed; pointer-events: none; z-index: 200;
+    width: clamp(40px,9vw,58px); height: clamp(44px,10vw,62px);
+    background: linear-gradient(135deg,#f1c40f,#f39c12); color: #1a1a2e;
+    font-size: clamp(22px,5vw,36px); font-weight: 700; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3); transform: translate(-50%,-50%) scale(1.15);
+    border-bottom: 3px solid #d4a017;
+  }
+
+  @media (max-width: 400px) {
+    .slot { width: clamp(36px,12vw,48px); height: clamp(42px,14vw,54px); font-size: 22px; }
+    .num-tile { width: clamp(34px,11vw,44px); height: clamp(38px,12vw,48px); font-size: 18px; }
+    .arena-side .poke-img { width: clamp(100px,24vw,140px); height: clamp(100px,24vw,140px); }
+    .arena-side .rocket-img { width: clamp(70px,18vw,110px); height: clamp(70px,18vw,110px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="game" id="game">
+  <div class="header">
+    <h1>⚡ Números ⚡</h1>
+    <div class="hint" id="phraseHint">Onde está o número?</div>
+  </div>
+
+  <!-- Arena - transparent -->
+  <div class="arena" id="arena">
+    <div class="arena-side left" id="pokeSide">
+      <img class="char-img poke-img" id="pokeImg" src="" alt="Pokémon">
+      <div class="char-label" id="pokeName">Pikachu</div>
+    </div>
+    <div class="arena-side right" id="rocketSide">
+      <div class="team-rocket-col">
+        <div class="rocket-row" id="rocketRow">
+          <img class="char-img rocket-img" id="rocketJessie" src="" alt="Jessie">
+          <img class="char-img rocket-img" id="rocketJames" src="" alt="James">
+          <img class="char-img rocket-img" id="rocketMeowth" src="" alt="Meowth">
+        </div>
+        <div class="char-label">Team Rocket</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slots -->
+  <div class="slots-area">
+    <div class="slots-row" id="slotsContainer"></div>
+  </div>
+
+  <div class="num-pool" id="numPool"></div>
+
+  <div class="feedback"><div class="msg" id="feedbackMsg"></div></div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="val" id="scoreDisplay">0</div><div class="label">⭐</div></div>
+    <div class="stat"><div class="val" id="phaseDisplay">0-9</div><div class="label">Fase</div></div>
+    <div class="stat"><div class="val" id="roundDisplay">0/10</div><div class="label">Ronda</div></div>
+  </div>
+
+  <div class="win-overlay" id="winOverlay">
+    <h2>🏆 Parabéns!</h2>
+    <div class="sub">Completaste todos os números!</div>
+    <button onclick="restartGame()">Jogar outra vez →</button>
+  </div>
+
+  <!-- Intro overlay -->
+  <div class="intro-overlay" id="introOverlay">
+    <img class="intro-char" id="introImage" src="" alt="">
+    <div class="intro-name" id="introName"></div>
+  </div>
+
+  <!-- Start overlay -->
+  <div class="start-overlay" id="startOverlay">
+    <div class="logo">⚡</div>
+    <h2>Números</h2>
+    <p>Ajuda o Pokémon a derrotar a Team Rocket!</p>
+    <button class="start-btn" onclick="startGame()">▶ COMEÇAR</button>
+  </div>
+</div>
+
+<div class="drag-ghost" id="dragGhost" style="display:none"></div>
+
+<script>
 const POKEMON = [
   {name:'Abra',file:'abra.png'},
   {name:'Aerodactyl',file:'aerodactyl.png'},
@@ -612,29 +612,28 @@ const POKEMON = [
   {name:'Zapdos',file:'zapdos.png'},
   {name:'Zubat',file:'zubat.png'},
 ];
-476|
-477|const TYPE_EFFECTS = {
-478|  electric: { emoji:'⚡', cls:'attack-electric' },
-479|  fire:     { emoji:'🔥', cls:'attack-fire' },
-480|  water:    { emoji:'💧', cls:'attack-water' },
-481|  psychic:  { emoji:'🔮', cls:'attack-psychic' },
-482|  ghost:    { emoji:'👻', cls:'attack-ghost' },
-483|  fairy:    { emoji:'✨', cls:'attack-fairy' },
-484|  dragon:   { emoji:'🐉', cls:'attack-dragon' },
-485|  normal:   { emoji:'💥', cls:'attack-normal' },
-486|};
-487|
-488|const ROCKET_MEMBERS = [
-489|  { id:'rocketJessie', name:'Jessie' },
-490|  { id:'rocketJames', name:'James' },
-491|  { id:'rocketMeowth', name:'Meowth' },
-492|];
-493|
-494|let currentPoke = POKEMON[0];
-495|let pokeRocketIdx = 0; // which team rocket member to blast next (0-2)
-496|let phase = 1;
-497|let roundInPhase = 0;
-498|let targetNum = 0;
-499|let score = 0;
-500|let isWin = false;
-501|
+
+const TYPE_EFFECTS = {
+  electric: { emoji:'⚡', cls:'attack-electric' },
+  fire:     { emoji:'🔥', cls:'attack-fire' },
+  water:    { emoji:'💧', cls:'attack-water' },
+  psychic:  { emoji:'🔮', cls:'attack-psychic' },
+  ghost:    { emoji:'👻', cls:'attack-ghost' },
+  fairy:    { emoji:'✨', cls:'attack-fairy' },
+  dragon:   { emoji:'🐉', cls:'attack-dragon' },
+  normal:   { emoji:'💥', cls:'attack-normal' },
+};
+
+const ROCKET_MEMBERS = [
+  { id:'rocketJessie', name:'Jessie' },
+  { id:'rocketJames', name:'James' },
+  { id:'rocketMeowth', name:'Meowth' },
+];
+
+let currentPoke = POKEMON[0];
+let pokeRocketIdx = 0; // which team rocket member to blast next (0-2)
+let phase = 1;
+let roundInPhase = 0;
+let targetNum = 0;
+let score = 0;
+let isWin = false;
