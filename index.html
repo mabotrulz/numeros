@@ -64,8 +64,8 @@
     height: clamp(140px, 32vw, 240px);
   }
   .arena-side .rocket-img {
-    width: clamp(110px, 26vw, 190px);
-    height: clamp(110px, 26vw, 190px);
+    width: clamp(80px, 19vw, 120px);
+    height: clamp(80px, 19vw, 120px);
   }
   .arena-side .char-label {
     font-size: clamp(8px, 1.6vw, 11px);
@@ -80,7 +80,7 @@
     align-items: center; gap: 2px;
   }
   .arena-side .team-rocket-col .rocket-row {
-    display: flex; gap: 0px; align-items: flex-end;
+    display: flex; gap: 0px; align-items: flex-end; justify-content: flex-end;
   }
   .arena-side .team-rocket-col .rocket-row .rocket-img {
     margin-right: -8px;
@@ -309,7 +309,7 @@
   /* Character intro animation */
   .intro-overlay {
     position: absolute; inset: 0;
-    background: rgba(10,10,20,0.92);
+    background: linear-gradient(180deg, rgba(108,92,231,0.96), rgba(165,94,234,0.96), rgba(253,121,168,0.96));
     display: flex; flex-direction: column;
     justify-content: center; align-items: center;
     z-index: 160;
@@ -332,9 +332,9 @@
   .intro-overlay .intro-name {
     font-size: clamp(28px, 8vw, 56px);
     font-weight: 800;
-    color: #f1c40f;
+    color: #ffe259;
     margin-top: 8px;
-    text-shadow: 0 0 30px rgba(241,196,15,0.3);
+    text-shadow: 0 3px 0 rgba(0,0,0,0.18);
     animation: introNameIn 0.4s ease 0.3s forwards;
     opacity: 0;
   }
@@ -344,12 +344,31 @@
   }
   .intro-overlay .intro-vs {
     font-size: clamp(20px, 5vw, 36px);
-    color: #e74c3c;
+    color: #ff7675;
     font-weight: 700;
     margin: 4px 0;
     animation: introNameIn 0.3s ease 0.1s forwards;
     opacity: 0;
   }
+
+  /* Evolution overlay */
+  .evo-overlay {
+    position: absolute; inset: 0; z-index: 170;
+    background: linear-gradient(180deg, #6c5ce7 0%, #a55eea 45%, #fd79a8 100%);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .evo-overlay.active { opacity: 1; pointer-events: all; }
+  .evo-container { position: relative; width: clamp(160px, 42vw, 300px); height: clamp(160px, 42vw, 300px); display: flex; align-items: center; justify-content: center; }
+  .evo-container img { position: absolute; width: 100%; height: 100%; object-fit: contain; transition: opacity 0.5s; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.3)); }
+  .evo-container img.base { opacity: 1; z-index: 2; }
+  .evo-container img.evolved { opacity: 0; z-index: 1; }
+  .evo-overlay.evolving .evo-container img.base { opacity: 0; }
+  .evo-overlay.evolving .evo-container img.evolved { opacity: 1; }
+  .evo-flash { position: absolute; inset: 0; background: #fff; border-radius: 50%; pointer-events: none; opacity: 0; z-index: 10; }
+  @keyframes evoPulse { 0%,100%{opacity:0} 15%{opacity:0.8} 30%{opacity:0} 45%{opacity:0.5} 60%{opacity:0} 75%{opacity:0.3} 90%{opacity:0} }
+  .evo-overlay.evolving .evo-flash { animation: evoPulse 1.8s ease 1; }
+  .evo-overlay .evo-name { font-size: clamp(20px, 5.5vw, 36px); font-weight: 800; color: #ffe259; margin-top: 14px; text-shadow: 0 3px 0 rgba(0,0,0,0.18); text-align: center; padding: 0 20px; line-height: 1.3; z-index: 5; }
 
   /* Start screen */
   .start-overlay {
@@ -426,12 +445,8 @@
     </div>
     <div class="arena-side right" id="rocketSide">
       <div class="team-rocket-col">
-        <div class="rocket-row" id="rocketRow">
-          <img class="char-img rocket-img" id="rocketJessie" src="" alt="Jessie">
-          <img class="char-img rocket-img" id="rocketJames" src="" alt="James">
-          <img class="char-img rocket-img" id="rocketMeowth" src="" alt="Meowth">
-        </div>
-        <div class="char-label">Team Rocket</div>
+        <div class="rocket-row" id="rocketRow"></div>
+        <div class="char-label" id="oppName">Team Rocket</div>
       </div>
     </div>
   </div>
@@ -463,11 +478,21 @@
     <div class="intro-name" id="introName"></div>
   </div>
 
+  <!-- Evolution overlay -->
+  <div class="evo-overlay" id="evoOverlay">
+    <div class="evo-container">
+      <img class="evolved" id="evoEvolved" src="" alt="">
+      <img class="base" id="evoBase" src="" alt="">
+      <div class="evo-flash"></div>
+    </div>
+    <div class="evo-name" id="evoName"></div>
+  </div>
+
   <!-- Start overlay -->
   <div class="start-overlay" id="startOverlay">
     <img src="assets/icon.png" style="width:clamp(60px,16vw,120px);height:clamp(60px,16vw,120px);border-radius:16px">
     <h2>Números</h2>
-    <p>Ajuda o Pokémon a derrotar a Team Rocket!</p>
+    <p>Ajuda o Pokémon a vencer os Líderes de Ginásio!</p>
     <button class="start-btn" onclick="startGame()">▶ COMEÇAR</button>
   </div>
 </div>
@@ -475,162 +500,7 @@
 <div class="drag-ghost" id="dragGhost" style="display:none"></div>
 
 <script>
-const POKEMON = [
-  {name:'Abra',file:'abra.png'},
-  {name:'Aerodactyl',file:'aerodactyl.png'},
-  {name:'Alakazam',file:'alakazam.png'},
-  {name:'Arbok',file:'arbok.png'},
-  {name:'Arcanine',file:'arcanine.png'},
-  {name:'Articuno',file:'articuno.png'},
-  {name:'Beedrill',file:'beedrill.png'},
-  {name:'Bellsprout',file:'bellsprout.png'},
-  {name:'Blastoise',file:'blastoise.png'},
-  {name:'Bulbasaur',file:'bulbasaur.png'},
-  {name:'Butterfree',file:'butterfree.png'},
-  {name:'Caterpie',file:'caterpie.png'},
-  {name:'Chansey',file:'chansey.png'},
-  {name:'Charizard',file:'charizard.png'},
-  {name:'Charmander',file:'charmander.png'},
-  {name:'Charmeleon',file:'charmeleon.png'},
-  {name:'Clefable',file:'clefable.png'},
-  {name:'Clefairy',file:'clefairy.png'},
-  {name:'Cloyster',file:'cloyster.png'},
-  {name:'Cubone',file:'cubone.png'},
-  {name:'Dewgong',file:'dewgong.png'},
-  {name:'Diglett',file:'diglett.png'},
-  {name:'Ditto',file:'ditto.png'},
-  {name:'Dodrio',file:'dodrio.png'},
-  {name:'Doduo',file:'doduo.png'},
-  {name:'Dragonair',file:'dragonair.png'},
-  {name:'Dragonite',file:'dragonite.png'},
-  {name:'Dratini',file:'dratini.png'},
-  {name:'Drowzee',file:'drowzee.png'},
-  {name:'Dugtrio',file:'dugtrio.png'},
-  {name:'Eevee',file:'eevee.png'},
-  {name:'Ekans',file:'ekans.png'},
-  {name:'Electabuzz',file:'electabuzz.png'},
-  {name:'Electrode',file:'electrode.png'},
-  {name:'Exeggcute',file:'exeggcute.png'},
-  {name:'Exeggutor',file:'exeggutor.png'},
-  {name:'Farfetchd',file:'farfetchd.png'},
-  {name:'Fearow',file:'fearow.png'},
-  {name:'Flareon',file:'flareon.png'},
-  {name:'Gastly',file:'gastly.png'},
-  {name:'Gengar',file:'gengar.png'},
-  {name:'Geodude',file:'geodude.png'},
-  {name:'Gloom',file:'gloom.png'},
-  {name:'Golbat',file:'golbat.png'},
-  {name:'Goldeen',file:'goldeen.png'},
-  {name:'Golduck',file:'golduck.png'},
-  {name:'Golem',file:'golem.png'},
-  {name:'Graveler',file:'graveler.png'},
-  {name:'Greninja',file:'greninja.png'},
-  {name:'Grimer',file:'grimer.png'},
-  {name:'Growlithe',file:'growlithe.png'},
-  {name:'Gyarados',file:'gyarados.png'},
-  {name:'Haunter',file:'haunter.png'},
-  {name:'Hitmonchan',file:'hitmonchan.png'},
-  {name:'Hitmonlee',file:'hitmonlee.png'},
-  {name:'Horsea',file:'horsea.png'},
-  {name:'Hypno',file:'hypno.png'},
-  {name:'Infernape',file:'infernape.png'},
-  {name:'Ivysaur',file:'ivysaur.png'},
-  {name:'Jigglypuff',file:'jigglypuff.png'},
-  {name:'Jolteon',file:'jolteon.png'},
-  {name:'Jynx',file:'jynx.png'},
-  {name:'Kabuto',file:'kabuto.png'},
-  {name:'Kabutops',file:'kabutops.png'},
-  {name:'Kadabra',file:'kadabra.png'},
-  {name:'Kakuna',file:'kakuna.png'},
-  {name:'Kangaskhan',file:'kangaskhan.png'},
-  {name:'Kingler',file:'kingler.png'},
-  {name:'Koffing',file:'koffing.png'},
-  {name:'Krabby',file:'krabby.png'},
-  {name:'Lapras',file:'lapras.png'},
-  {name:'Lickitung',file:'lickitung.png'},
-  {name:'Lucario',file:'lucario.png'},
-  {name:'Machamp',file:'machamp.png'},
-  {name:'Machoke',file:'machoke.png'},
-  {name:'Machop',file:'machop.png'},
-  {name:'Magikarp',file:'magikarp.png'},
-  {name:'Magmar',file:'magmar.png'},
-  {name:'Magnemite',file:'magnemite.png'},
-  {name:'Magneton',file:'magneton.png'},
-  {name:'Mankey',file:'mankey.png'},
-  {name:'Marowak',file:'marowak.png'},
-  {name:'Meowth',file:'meowth.png'},
-  {name:'Metapod',file:'metapod.png'},
-  {name:'Mew',file:'mew.png'},
-  {name:'Mewtwo',file:'mewtwo.png'},
-  {name:'Moltres',file:'moltres.png'},
-  {name:'Mr Mime',file:'mr_mime.png'},
-  {name:'Muk',file:'muk.png'},
-  {name:'Nidoking',file:'nidoking.png'},
-  {name:'Nidoqueen',file:'nidoqueen.png'},
-  {name:'Nidoranf',file:'nidoranf.png'},
-  {name:'Nidoranm',file:'nidoranm.png'},
-  {name:'Nidorina',file:'nidorina.png'},
-  {name:'Nidorino',file:'nidorino.png'},
-  {name:'Ninetales',file:'ninetales.png'},
-  {name:'Oddish',file:'oddish.png'},
-  {name:'Omanyte',file:'omanyte.png'},
-  {name:'Omastar',file:'omastar.png'},
-  {name:'Onix',file:'onix.png'},
-  {name:'Paras',file:'paras.png'},
-  {name:'Parasect',file:'parasect.png'},
-  {name:'Persian',file:'persian.png'},
-  {name:'Pidgeot',file:'pidgeot.png'},
-  {name:'Pidgeotto',file:'pidgeotto.png'},
-  {name:'Pidgey',file:'pidgey.png'},
-  {name:'Pikachu',file:'pikachu.png'},
-  {name:'Pinsir',file:'pinsir.png'},
-  {name:'Poliwag',file:'poliwag.png'},
-  {name:'Poliwhirl',file:'poliwhirl.png'},
-  {name:'Poliwrath',file:'poliwrath.png'},
-  {name:'Ponyta',file:'ponyta.png'},
-  {name:'Porygon',file:'porygon.png'},
-  {name:'Primeape',file:'primeape.png'},
-  {name:'Psyduck',file:'psyduck.png'},
-  {name:'Raichu',file:'raichu.png'},
-  {name:'Rapidash',file:'rapidash.png'},
-  {name:'Raticate',file:'raticate.png'},
-  {name:'Rattata',file:'rattata.png'},
-  {name:'Rhydon',file:'rhydon.png'},
-  {name:'Rhyhorn',file:'rhyhorn.png'},
-  {name:'Sandshrew',file:'sandshrew.png'},
-  {name:'Sandslash',file:'sandslash.png'},
-  {name:'Scyther',file:'scyther.png'},
-  {name:'Seadra',file:'seadra.png'},
-  {name:'Seaking',file:'seaking.png'},
-  {name:'Seel',file:'seel.png'},
-  {name:'Shellder',file:'shellder.png'},
-  {name:'Slowbro',file:'slowbro.png'},
-  {name:'Slowpoke',file:'slowpoke.png'},
-  {name:'Snorlax',file:'snorlax.png'},
-  {name:'Spearow',file:'spearow.png'},
-  {name:'Squirtle',file:'squirtle.png'},
-  {name:'Starmie',file:'starmie.png'},
-  {name:'Staryu',file:'staryu.png'},
-  {name:'Tangela',file:'tangela.png'},
-  {name:'Tauros',file:'tauros.png'},
-  {name:'Tentacool',file:'tentacool.png'},
-  {name:'Tentacruel',file:'tentacruel.png'},
-  {name:'Vaporeon',file:'vaporeon.png'},
-  {name:'Venomoth',file:'venomoth.png'},
-  {name:'Venonat',file:'venonat.png'},
-  {name:'Venusaur',file:'venusaur.png'},
-  {name:'Victreebel',file:'victreebel.png'},
-  {name:'Vileplume',file:'vileplume.png'},
-  {name:'Voltorb',file:'voltorb.png'},
-  {name:'Vulpix',file:'vulpix.png'},
-  {name:'Wartortle',file:'wartortle.png'},
-  {name:'Weedle',file:'weedle.png'},
-  {name:'Weepinbell',file:'weepinbell.png'},
-  {name:'Weezing',file:'weezing.png'},
-  {name:'Wigglytuff',file:'wigglytuff.png'},
-  {name:'Zapdos',file:'zapdos.png'},
-  {name:'Zubat',file:'zubat.png'},
-];
+
 
 const TYPE_EFFECTS = {
   electric: { emoji:'⚡', cls:'attack-electric' },
@@ -643,13 +513,79 @@ const TYPE_EFFECTS = {
   normal:   { emoji:'💥', cls:'attack-normal' },
 };
 
-const ROCKET_MEMBERS = [
-  { id:'rocketJessie', name:'Jessie' },
-  { id:'rocketJames', name:'James' },
-  { id:'rocketMeowth', name:'Meowth' },
+// Left-side pokémon: always start at BASE form, evolve after each fight
+const EVOLUTIONS = [
+  {name:'Bulbasaur',file:'bulbasaur.png',evoName:'Ivysaur',evoFile:'ivysaur.png'},
+  {name:'Charmander',file:'charmander.png',evoName:'Charmeleon',evoFile:'charmeleon.png'},
+  {name:'Squirtle',file:'squirtle.png',evoName:'Wartortle',evoFile:'wartortle.png'},
+  {name:'Pikachu',file:'pikachu.png',evoName:'Raichu',evoFile:'raichu.png'},
+  {name:'Caterpie',file:'caterpie.png',evoName:'Metapod',evoFile:'metapod.png'},
+  {name:'Weedle',file:'weedle.png',evoName:'Kakuna',evoFile:'kakuna.png'},
+  {name:'Pidgey',file:'pidgey.png',evoName:'Pidgeotto',evoFile:'pidgeotto.png'},
+  {name:'Rattata',file:'rattata.png',evoName:'Raticate',evoFile:'raticate.png'},
+  {name:'Spearow',file:'spearow.png',evoName:'Fearow',evoFile:'fearow.png'},
+  {name:'Ekans',file:'ekans.png',evoName:'Arbok',evoFile:'arbok.png'},
+  {name:'Sandshrew',file:'sandshrew.png',evoName:'Sandslash',evoFile:'sandslash.png'},
+  {name:'Clefairy',file:'clefairy.png',evoName:'Clefable',evoFile:'clefable.png'},
+  {name:'Vulpix',file:'vulpix.png',evoName:'Ninetales',evoFile:'ninetales.png'},
+  {name:'Jigglypuff',file:'jigglypuff.png',evoName:'Wigglytuff',evoFile:'wigglytuff.png'},
+  {name:'Zubat',file:'zubat.png',evoName:'Golbat',evoFile:'golbat.png'},
+  {name:'Oddish',file:'oddish.png',evoName:'Gloom',evoFile:'gloom.png'},
+  {name:'Paras',file:'paras.png',evoName:'Parasect',evoFile:'parasect.png'},
+  {name:'Venonat',file:'venonat.png',evoName:'Venomoth',evoFile:'venomoth.png'},
+  {name:'Diglett',file:'diglett.png',evoName:'Dugtrio',evoFile:'dugtrio.png'},
+  {name:'Meowth',file:'meowth.png',evoName:'Persian',evoFile:'persian.png'},
+  {name:'Psyduck',file:'psyduck.png',evoName:'Golduck',evoFile:'golduck.png'},
+  {name:'Mankey',file:'mankey.png',evoName:'Primeape',evoFile:'primeape.png'},
+  {name:'Growlithe',file:'growlithe.png',evoName:'Arcanine',evoFile:'arcanine.png'},
+  {name:'Poliwag',file:'poliwag.png',evoName:'Poliwhirl',evoFile:'poliwhirl.png'},
+  {name:'Abra',file:'abra.png',evoName:'Kadabra',evoFile:'kadabra.png'},
+  {name:'Machop',file:'machop.png',evoName:'Machoke',evoFile:'machoke.png'},
+  {name:'Bellsprout',file:'bellsprout.png',evoName:'Weepinbell',evoFile:'weepinbell.png'},
+  {name:'Tentacool',file:'tentacool.png',evoName:'Tentacruel',evoFile:'tentacruel.png'},
+  {name:'Geodude',file:'geodude.png',evoName:'Graveler',evoFile:'graveler.png'},
+  {name:'Ponyta',file:'ponyta.png',evoName:'Rapidash',evoFile:'rapidash.png'},
+  {name:'Slowpoke',file:'slowpoke.png',evoName:'Slowbro',evoFile:'slowbro.png'},
+  {name:'Magnemite',file:'magnemite.png',evoName:'Magneton',evoFile:'magneton.png'},
+  {name:'Doduo',file:'doduo.png',evoName:'Dodrio',evoFile:'dodrio.png'},
+  {name:'Seel',file:'seel.png',evoName:'Dewgong',evoFile:'dewgong.png'},
+  {name:'Grimer',file:'grimer.png',evoName:'Muk',evoFile:'muk.png'},
+  {name:'Shellder',file:'shellder.png',evoName:'Cloyster',evoFile:'cloyster.png'},
+  {name:'Gastly',file:'gastly.png',evoName:'Haunter',evoFile:'haunter.png'},
+  {name:'Drowzee',file:'drowzee.png',evoName:'Hypno',evoFile:'hypno.png'},
+  {name:'Krabby',file:'krabby.png',evoName:'Kingler',evoFile:'kingler.png'},
+  {name:'Voltorb',file:'voltorb.png',evoName:'Electrode',evoFile:'electrode.png'},
+  {name:'Exeggcute',file:'exeggcute.png',evoName:'Exeggutor',evoFile:'exeggutor.png'},
+  {name:'Cubone',file:'cubone.png',evoName:'Marowak',evoFile:'marowak.png'},
+  {name:'Koffing',file:'koffing.png',evoName:'Weezing',evoFile:'weezing.png'},
+  {name:'Rhyhorn',file:'rhyhorn.png',evoName:'Rhydon',evoFile:'rhydon.png'},
+  {name:'Horsea',file:'horsea.png',evoName:'Seadra',evoFile:'seadra.png'},
+  {name:'Goldeen',file:'goldeen.png',evoName:'Seaking',evoFile:'seaking.png'},
+  {name:'Staryu',file:'staryu.png',evoName:'Starmie',evoFile:'starmie.png'},
+  {name:'Magikarp',file:'magikarp.png',evoName:'Gyarados',evoFile:'gyarados.png'},
+  {name:'Dratini',file:'dratini.png',evoName:'Dragonair',evoFile:'dragonair.png'},
+  {name:'Omanyte',file:'omanyte.png',evoName:'Omastar',evoFile:'omastar.png'},
+  {name:'Kabuto',file:'kabuto.png',evoName:'Kabutops',evoFile:'kabutops.png'},
+  {name:'Eevee',file:'eevee.png',evos:[{name:'Vaporeon',file:'vaporeon.png'},{name:'Jolteon',file:'jolteon.png'},{name:'Flareon',file:'flareon.png'}]},
 ];
 
-let currentPoke = POKEMON[0];
+// Opponents: gym leaders with their pokémon (+ Team Rocket)
+const OPPONENTS = [
+  {name:'Team Rocket', imgs:['jessie.png','james.png','meowth.png']},
+  {name:'Brock', imgs:['leader_brock.png','geodude.png','onix.png']},
+  {name:'Misty', imgs:['leader_misty.png','staryu.png','starmie.png']},
+  {name:'Lt. Surge', imgs:['leader_surge.png','voltorb.png','raichu.png']},
+  {name:'Erika', imgs:['leader_erika.png','gloom.png','vileplume.png']},
+  {name:'Koga', imgs:['leader_koga.png','koffing.png','weezing.png']},
+  {name:'Sabrina', imgs:['leader_sabrina.png','kadabra.png','alakazam.png']},
+  {name:'Blaine', imgs:['leader_blaine.png','magmar.png','arcanine.png']},
+  {name:'Giovanni', imgs:['leader_giovanni.png','rhydon.png','nidoking.png']},
+];
+
+let currentPoke = null;
+let currentEvo = null;
+let currentOpp = null;
+let oppBag = [];
 let pokeRocketIdx = 0; // which team rocket member to blast next (0-2)
 let phase = 1;
 let roundInPhase = 0;
@@ -768,39 +704,83 @@ function showIntro(imgSrc, name, duration, callback) {
   }
 }
 
-function pickNewPokemon(callback) {
-    let idx;
-    do { idx = Math.floor(Math.random() * POKEMON.length); } while (POKEMON[idx] === currentPoke);
-    currentPoke = POKEMON[idx];
+function buildOppRow() {
+  const row = document.getElementById('rocketRow');
+  row.innerHTML = '';
+  currentOpp.imgs.forEach(function(f, i) {
+    const img = document.createElement('img');
+    img.className = 'char-img rocket-img';
+    img.id = 'oppMember' + i;
+    img.src = 'assets/' + f;
+    row.appendChild(img);
+  });
+  document.getElementById('oppName').textContent = currentOpp.name;
+}
+
+// Evolution sequence after a fight is won: 1.2s base hold → flash → crossfade to evolved
+function runEvolution(callback) {
+  const overlay = document.getElementById('evoOverlay');
+  document.getElementById('evoBase').src = 'assets/' + currentPoke.file;
+  document.getElementById('evoEvolved').src = 'assets/' + currentEvo.file;
+  document.getElementById('evoName').textContent = 'O ' + currentPoke.name + ' está a evoluir…';
+  overlay.classList.remove('evolving');
+  overlay.classList.add('active');
+  speak('O ' + currentPoke.name + ' está a evoluir!');
+  setTimeout(function() {
+    overlay.classList.add('evolving');
+    sfxCorrect();
+    document.getElementById('evoName').textContent = currentPoke.name + ' evoluiu para ' + currentEvo.name + '!';
+    setTimeout(function() { speak(currentEvo.name + '!'); }, 600);
+    setTimeout(function() {
+      overlay.classList.remove('active');
+      overlay.classList.remove('evolving');
+      if (callback) callback();
+    }, 2400);
+  }, 1200);
+}
+
+function startFight(callback) {
+    // Pick a NEW base-form pokémon for the left side
+    let entry;
+    do { entry = EVOLUTIONS[Math.floor(Math.random() * EVOLUTIONS.length)]; }
+    while (currentPoke && entry.file === currentPoke.file);
+    currentPoke = entry;
+    currentEvo = entry.evos
+      ? entry.evos[Math.floor(Math.random() * entry.evos.length)]
+      : { name: entry.evoName, file: entry.evoFile };
+
+    // Pick next opponent (shuffled bag, no repeats until exhausted)
+    if (oppBag.length === 0) oppBag = shuffle(OPPONENTS.map((_, i) => i));
+    let oppIdx = oppBag.pop();
+    if (currentOpp && OPPONENTS[oppIdx].name === currentOpp.name && oppBag.length > 0) {
+      const alt = oppBag.pop(); oppBag.push(oppIdx); oppIdx = alt;
+    }
+    currentOpp = OPPONENTS[oppIdx];
+
     pokeRocketIdx = 0;
     setPokeImage(currentPoke);
-    setRocketImages();
-    ROCKET_MEMBERS.forEach(m => {
-      document.getElementById(m.id).style.opacity = '1';
-      document.getElementById(m.id).style.transform = '';
-      document.getElementById(m.id).classList.remove('blast','hit');
-    });
+    buildOppRow();
 
-    // Show Pokemon → speaks name. Then show Team Rocket → speaks "contra Team Rocket"
+    // Show Pokemon → speaks name. Then show opponent → speaks "contra {name}"
     showIntro('assets/' + currentPoke.file, currentPoke.name, 2200, function() {
       document.getElementById('pokeSide').style.opacity = '0';
       document.getElementById('rocketSide').style.opacity = '0';
-    
+
       const overlay = document.getElementById('introOverlay');
       overlay.innerHTML = '';
       overlay.style.display = 'flex';
       overlay.style.flexDirection = 'column';
       overlay.style.alignItems = 'center';
       overlay.style.justifyContent = 'center';
-      
+
       const row = document.createElement('div');
       row.style.display = 'flex';
       row.style.gap = 'clamp(2px, 1vw, 8px)';
       row.style.marginLeft = '-8px';
       row.style.alignItems = 'flex-end';
       row.style.marginBottom = '8px';
-      
-      ['jessie.png','james.png','meowth.png'].forEach(function(f) {
+
+      currentOpp.imgs.forEach(function(f) {
         var img = document.createElement('img');
         img.src = 'assets/' + f;
         img.style.width = 'clamp(80px, 20vw, 150px)';
@@ -811,16 +791,16 @@ function pickNewPokemon(callback) {
         row.appendChild(img);
       });
       overlay.appendChild(row);
-      
+
       var nameEl = document.createElement('div');
       nameEl.className = 'intro-name';
-      nameEl.textContent = 'Team Rocket!';
+      nameEl.textContent = currentOpp.name + '!';
       overlay.appendChild(nameEl);
       overlay.classList.add('active');
-      
-      // Speak "contra Team Rocket!" now that they're visible
+
+      // Speak "contra {name}!" now that they're visible
       if (window.speechSynthesis) {
-        var u = new SpeechSynthesisUtterance('contra Team Rocket!');
+        var u = new SpeechSynthesisUtterance('contra ' + currentOpp.name + '!');
         u.lang = 'en-US'; u.rate = 0.85;
         u.onend = function() {
           overlay.classList.remove('active');
@@ -857,8 +837,6 @@ function pickNewPokemon(callback) {
 function loadRound() {
   isWin = false;
   if (phase === 1 && roundInPhase >= ROUNDS_PER_PHASE) { phase = 2; roundInPhase = 0; }
-  if (phase === 2 && roundInPhase >= ROUNDS_PER_PHASE) { onWin(); return; }
-
   targetNum = phase === 1 ? Math.floor(Math.random() * 10) : 10 + Math.floor(Math.random() * 11);
   const digits = getNumberDigits(targetNum);
   totalSlots = digits.length;
@@ -868,14 +846,17 @@ function loadRound() {
   document.getElementById('roundDisplay').textContent = (roundInPhase + 1) + '/' + ROUNDS_PER_PHASE;
   document.getElementById('feedbackMsg').textContent = '';
 
-  // Pick Pokemon if all 3 Team Rocket have flown — with intro animation, then continue
+  // Fight won → evolve, then start a new fight (or win the game)
+  const gameDone = (phase === 2 && roundInPhase >= ROUNDS_PER_PHASE);
   if (pokeRocketIdx >= 3) {
-    pickNewPokemon(() => {
-      clearInterval(hintTimer);
-      loadRound();
-    });
+    if (gameDone) {
+      runEvolution(() => { clearInterval(hintTimer); onWin(); });
+    } else {
+      runEvolution(() => startFight(() => { clearInterval(hintTimer); loadRound(); }));
+    }
     return;
   }
+  if (gameDone) { onWin(); return; }
 
   // Build slots
   const slotsEl = document.getElementById('slotsContainer');
@@ -1015,9 +996,8 @@ function triggerPokemonAttack() {
   pokeImg.className = 'char-img poke-img ' + effect.cls;
   setTimeout(() => { pokeImg.className = 'char-img poke-img'; }, 600);
 
-  // One Team Rocket member gets hit and blasts off
-  const member = ROCKET_MEMBERS[pokeRocketIdx];
-  const el = document.getElementById(member.id);
+  // One opponent member gets hit and blasts off
+  const el = document.getElementById('oppMember' + pokeRocketIdx);
   if (el) {
     el.classList.add('hit');
     setTimeout(() => {
@@ -1043,9 +1023,9 @@ function onWin() {
 }
 
 function restartGame() {
-  phase = 1; roundInPhase = 0; score = 0; pokeRocketIdx = 3;
+  phase = 1; roundInPhase = 0; score = 0; pokeRocketIdx = 3; oppBag = [];
   document.getElementById('winOverlay').classList.remove('active');
-  pickNewPokemon(() => {
+  startFight(() => {
     loadRound();
   });
 }
@@ -1058,12 +1038,6 @@ function showFeedback(msg, type) {
 }
 
 // Initialize - set images immediately, then start game
-function setRocketImages() {
-  document.getElementById('rocketJessie').src = 'assets/jessie.png';
-  document.getElementById('rocketJames').src = 'assets/james.png';
-  document.getElementById('rocketMeowth').src = 'assets/meowth.png';
-}
-
 function setPokeImage(poke) {
   document.getElementById('pokeImg').src = 'assets/' + poke.file;
   document.getElementById('pokeName').textContent = poke.name;
@@ -1073,8 +1047,8 @@ function setPokeImage(poke) {
 function startGame() {
   document.getElementById('startOverlay').classList.add('hidden');
   initAudio();
-  setRocketImages();
-  pickNewPokemon(() => {
+  oppBag = [];
+  startFight(() => {
     phase = 1; roundInPhase = 0; score = 0;
     document.getElementById('winOverlay').classList.remove('active');
     loadRound();
@@ -1082,9 +1056,11 @@ function startGame() {
 }
 
 // Set images on page load (hidden until start)
-setRocketImages();
-document.getElementById('pokeImg').src = 'assets/' + POKEMON[0].file;
-document.getElementById('pokeName').textContent = POKEMON[0].name;
+currentPoke = EVOLUTIONS[0];
+currentEvo = { name: EVOLUTIONS[0].evoName, file: EVOLUTIONS[0].evoFile };
+currentOpp = OPPONENTS[0];
+setPokeImage(currentPoke);
+buildOppRow();
 </script>
 </body>
 </html>
