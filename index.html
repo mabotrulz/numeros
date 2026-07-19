@@ -7,8 +7,8 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #1a1a2e;
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #2d1b4e;
+    font-family: 'Baloo 2', 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif;
     display: flex; justify-content: center; align-items: center;
     min-height: 100vh; min-height: 100dvh;
     overflow: hidden; touch-action: none; user-select: none;
@@ -17,7 +17,7 @@
   .game {
     width: 100vw; height: 100vh; height: 100dvh;
     max-width: 800px;
-    background: linear-gradient(180deg, #1a1a2e, #16213e, #0f3460);
+    background: linear-gradient(180deg, #6c5ce7 0%, #a55eea 45%, #fd79a8 100%);
     display: flex; flex-direction: column;
     position: relative; overflow: hidden;
   }
@@ -27,12 +27,13 @@
     flex-shrink: 0; z-index: 2; position: relative;
   }
   .header h1 {
-    color: #f1c40f; font-size: clamp(13px, 3vw, 18px);
+    color: #ffe259; font-size: clamp(13px, 3vw, 18px);
     font-weight: 900; letter-spacing: 2px;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.15);
   }
   .header .hint {
-    color: #888; font-size: clamp(9px, 2vw, 12px);
-    min-height: 16px;
+    color: rgba(255,255,255,0.85); font-size: clamp(9px, 2vw, 12px);
+    min-height: 16px; font-weight: 600;
   }
 
   /* Arena - transparent bg */
@@ -68,8 +69,8 @@
   }
   .arena-side .char-label {
     font-size: clamp(8px, 1.6vw, 11px);
-    color: #aaa;
-    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    font-weight: 700;
     letter-spacing: 1px;
     margin-top: 2px;
   }
@@ -219,17 +220,17 @@
   .slot {
     width: clamp(44px, 10vw, 68px);
     height: clamp(52px, 12vw, 76px);
-    border: 3px dashed #f1c40f;
-    border-radius: 10px;
+    border: 3px dashed rgba(255,255,255,0.6);
+    border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     font-size: clamp(28px, 7vw, 48px);
-    font-weight: 700; color: #f1c40f;
+    font-weight: 800; color: #ffe259;
     transition: all 0.25s;
-    background: rgba(241,196,15,0.05);
+    background: rgba(255,255,255,0.12);
   }
   .slot.filled {
-    border-style: solid;
-    background: rgba(241,196,15,0.15);
+    border-style: solid; border-color: #ffe259;
+    background: rgba(255,226,89,0.25);
     animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
   }
   .slot.wrong {
@@ -238,8 +239,8 @@
     animation: shake 0.35s ease;
   }
   .slot.drag-over {
-    border-color: #4ecca3;
-    background: rgba(78,204,163,0.1);
+    border-color: #55efc4;
+    background: rgba(85,239,196,0.2);
     transform: scale(1.08);
   }
 
@@ -256,15 +257,15 @@
   .num-tile {
     width: clamp(40px, 9vw, 58px);
     height: clamp(44px, 10vw, 62px);
-    background: linear-gradient(135deg, #f1c40f, #f39c12);
-    color: #1a1a2e;
+    background: #fff;
+    color: #6c5ce7;
     font-size: clamp(22px, 5vw, 36px);
-    font-weight: 700; border-radius: 10px;
+    font-weight: 800; border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     cursor: grab; touch-action: none;
     transition: transform 0.15s, opacity 0.3s;
-    box-shadow: 0 3px 8px rgba(241,196,15,0.3);
-    border-bottom: 3px solid #d4a017;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+    border-bottom: 3px solid rgba(0,0,0,0.12);
   }
   .num-tile:active { cursor: grabbing; }
   .num-tile:hover { transform: translateY(-2px); }
@@ -276,8 +277,8 @@
     min-height: 24px; flex-shrink: 0; z-index: 2; position: relative;
   }
   .feedback .msg { font-size: clamp(13px, 2.5vw, 18px); font-weight: 600; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
-  .feedback .msg.ok { color: #4ecca3; }
-  .feedback .msg.fail { color: #e74c3c; }
+  .feedback .msg.ok { color: #a9ffd9; }
+  .feedback .msg.fail { color: #ffe0e0; }
 
   .stats-row {
     display: flex; justify-content: center; gap: 20px;
@@ -286,7 +287,7 @@
   }
   .stats-row .stat { text-align: center; }
   .stats-row .stat .val { font-size: clamp(16px, 3.5vw, 24px); font-weight: 700; color: #fff; }
-  .stats-row .stat .label { font-size: clamp(8px, 1.6vw, 11px); color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .stats-row .stat .label { font-size: clamp(8px, 1.6vw, 11px); color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1px; }
 
   .win-overlay {
     position: absolute; inset: 0;
@@ -376,11 +377,11 @@
   .drag-ghost {
     position: fixed; pointer-events: none; z-index: 200;
     width: clamp(40px,9vw,58px); height: clamp(44px,10vw,62px);
-    background: linear-gradient(135deg,#f1c40f,#f39c12); color: #1a1a2e;
-    font-size: clamp(22px,5vw,36px); font-weight: 700; border-radius: 10px;
+    background: #fff; color: #6c5ce7;
+    font-size: clamp(22px,5vw,36px); font-weight: 800; border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 8px 25px rgba(0,0,0,0.3); transform: translate(-50%,-50%) scale(1.15);
-    border-bottom: 3px solid #d4a017;
+    border-bottom: 3px solid rgba(0,0,0,0.12);
   }
 
   @media (max-width: 400px) {
