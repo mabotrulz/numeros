@@ -412,7 +412,22 @@
     display: none; align-items: center; justify-content: center;
     z-index: 8; pointer-events: none; border-radius: 12px;
   }
-  .wild-overlay.active { display: flex; background: rgba(26,13,60,0.42); }
+  .wild-overlay.active {
+    display: flex;
+    background:
+      radial-gradient(ellipse 150px 26px at 50% 90%, rgba(0,60,0,0.22), transparent),
+      repeating-linear-gradient(97deg, rgba(255,255,255,0.06) 0 9px, transparent 9px 24px),
+      repeating-linear-gradient(-83deg, rgba(0,80,0,0.14) 0 5px, transparent 5px 19px),
+      linear-gradient(180deg, #aee3ff 0%, #cdeffd 30%, #8fd46f 31%, #66b84a 62%, #4a9c36 100%);
+    border: 3px solid rgba(255,255,255,0.4);
+    box-shadow: inset 0 0 40px rgba(0,80,0,0.28);
+  }
+  .wild-overlay.active::after {
+    content: '🌼  🌿    🌷    🌿  🌼';
+    position: absolute; bottom: 4px; left: 0; right: 0;
+    text-align: center; font-size: clamp(12px, 3vw, 18px);
+    letter-spacing: 8px; opacity: 0.9; pointer-events: none;
+  }
   .wild-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: all; }
   .wild-img { width: clamp(96px, 23vw, 150px); height: clamp(96px, 23vw, 150px); object-fit: contain;
     filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); animation: wildIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
@@ -473,6 +488,18 @@
   .dc-close { margin-top:12px; border:none; border-radius:999px; padding:10px 30px; font-family:inherit;
     font-weight:800; font-size:16px; color:#5b3a00; background:linear-gradient(180deg,#ffe259,#ffa751);
     box-shadow:0 4px 0 #d9820f; cursor:pointer; }
+  .dc-swap { margin-top:12px; margin-right:8px; border:none; border-radius:999px; padding:10px 22px;
+    font-family:inherit; font-weight:800; font-size:16px; color:#fff;
+    background:linear-gradient(180deg,#55efc4,#00b894); box-shadow:0 4px 0 #018a6b; cursor:pointer; }
+
+  /* In-game pokédex button (header) */
+  .dex-hud-btn {
+    position: absolute; top: 4px; right: 6px; z-index: 6;
+    width: clamp(38px, 9vw, 48px); height: clamp(38px, 9vw, 48px);
+    border-radius: 50%; border: 3px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.2); font-size: clamp(17px, 4.4vw, 22px);
+    cursor: pointer; line-height: 1;
+  }
 
   @media (max-width: 400px) {
     .slot { width: clamp(36px,12vw,48px); height: clamp(42px,14vw,54px); font-size: 22px; }
@@ -506,6 +533,7 @@
   <div class="header">
     <h1>⚡ Números ⚡</h1>
     <div class="hint" id="phraseHint">Onde está o número?</div>
+    <button class="dex-hud-btn" id="dexHudBtn" title="Pokédex">📖</button>
   </div>
 
   <!-- Arena - transparent -->
@@ -706,16 +734,40 @@ const TYPE_PT = {electric:'Elétrico',fire:'Fogo',water:'Água',psychic:'Psíqui
 
 let dexCaught = {};
 try { dexCaught = JSON.parse(localStorage.getItem('numeros_dex') || '{}'); } catch(e) {}
+// Everyone starts with Pikachu
+if (!dexCaught['pikachu.png']) { dexCaught['pikachu.png'] = 1; }
 function saveDex() { try { localStorage.setItem('numeros_dex', JSON.stringify(dexCaught)); } catch(e) {} }
+saveDex();
 function dexTotal() { return Object.keys(dexCaught).length; }
+
+// Set the player's active fighter from any captured pokémon file.
+// Looks up its type (attack animation) and evolution (if it has one).
+function setActivePoke(file) {
+  const p = POKEDEX.find(x => x.file === file) || { name: file, types: ['normal'] };
+  const ev = EVOLUTIONS.find(x => x.file === file);
+  currentEvo = ev
+    ? (ev.evos ? ev.evos[Math.floor(Math.random() * ev.evos.length)] : { name: ev.evoName, file: ev.evoFile })
+    : null;
+  currentPoke = { name: p.name, file: p.file, type: p.types[0] };
+  setPokeImage(currentPoke);
+}
+
+let gameStartedFlag = false;
 
 function openDex() {
   renderDex();
   document.getElementById('dexOverlay').classList.add('active');
+  clearInterval(hintTimer); // pause number hints while browsing
 }
 function closeDex() {
   document.getElementById('dexOverlay').classList.remove('active');
   closeDexDetail();
+  // Resume number hints if a round (or capture challenge) is waiting for an answer
+  if (gameStartedFlag && !isWin && document.querySelectorAll('.slot:not(.filled)').length > 0) {
+    speakNumber(targetNum);
+    clearInterval(hintTimer);
+    hintTimer = setInterval(function() { speakNumber(targetNum); }, 5000);
+  }
 }
 function renderDex() {
   const grid = document.getElementById('dexGrid');
@@ -743,15 +795,25 @@ function openDexDetail(p) {
       '<div class="dc-val">' + v + '</div></div>';
   };
   const card = document.getElementById('dexCard');
+  const swapBtn = (gameStartedFlag && !isWin)
+    ? '<button class="dc-swap" id="dcSwap">⚔️ Lutar com este!</button>' : '';
   card.innerHTML = '<img src="assets/' + p.file + '" alt="">' +
     '<div class="dc-name">' + p.name + '</div>' +
     '<div class="dc-num">#' + p.id + ' — apanhado ×' + n + '</div>' +
     '<div class="dc-types">' + types + '</div>' +
     bar('Ataque', p.atk) + bar('Defesa', p.def) + bar('Veloc.', p.spd) +
-    '<button class="dc-close" id="dcClose">Fechar</button>';
+    '<div>' + swapBtn + '<button class="dc-close" id="dcClose">Fechar</button></div>';
   document.getElementById('dexDetail').classList.add('active');
   speak(p.name + '!');
   document.getElementById('dcClose').addEventListener('click', closeDexDetail);
+  if (swapBtn) {
+    document.getElementById('dcSwap').addEventListener('click', function() {
+      setActivePoke(p.file);
+      speak(p.name + ', eu escolho-te!');
+      closeDexDetail();
+      closeDex();
+    });
+  }
 }
 function closeDexDetail() {
   document.getElementById('dexDetail').classList.remove('active');
@@ -997,6 +1059,7 @@ function buildOppRow() {
 
 // Evolution sequence after a fight is won: 1.2s base hold → flash → crossfade to evolved
 function runEvolution(callback) {
+  const preFile = currentPoke.file, postFile = currentEvo.file;
   const overlay = document.getElementById('evoOverlay');
   document.getElementById('evoBase').src = 'assets/' + currentPoke.file;
   document.getElementById('evoEvolved').src = 'assets/' + currentEvo.file;
@@ -1012,20 +1075,20 @@ function runEvolution(callback) {
     setTimeout(function() {
       overlay.classList.remove('active');
       overlay.classList.remove('evolving');
+      // Both forms join the pokédex, and the evolved form becomes the fighter
+      dexCaught[preFile] = Math.max(1, dexCaught[preFile] || 0);
+      dexCaught[postFile] = (dexCaught[postFile] || 0) + 1;
+      saveDex();
+      setActivePoke(postFile);
       if (callback) callback();
     }, 2400);
   }, 2600);
 }
 
 function startFight(callback) {
-    // Pick a NEW base-form pokémon for the left side
-    let entry;
-    do { entry = EVOLUTIONS[Math.floor(Math.random() * EVOLUTIONS.length)]; }
-    while (currentPoke && entry.file === currentPoke.file);
-    currentPoke = entry;
-    currentEvo = entry.evos
-      ? entry.evos[Math.floor(Math.random() * entry.evos.length)]
-      : { name: entry.evoName, file: entry.evoFile };
+    // The player keeps their active pokémon across fights (swapped via the pokédex,
+    // evolved after each gym). Only captured pokémon can fight.
+    if (!currentPoke) setActivePoke('pikachu.png');
 
     // Pick next opponent (shuffled bag, no repeats until exhausted)
     if (oppBag.length === 0) oppBag = shuffle(OPPONENTS.map((_, i) => i));
@@ -1124,14 +1187,15 @@ function loadRound() {
   document.getElementById('roundDisplay').textContent = (roundInPhase + 1) + '/' + ROUNDS_PER_PHASE;
   document.getElementById('feedbackMsg').textContent = '';
 
-  // Fight won → evolve, then start a new fight (or win the game)
+  // Fight won → evolve (if the active pokémon can), then start a new fight (or win the game)
   const gameDone = (phase === 2 && roundInPhase >= ROUNDS_PER_PHASE);
   if (pokeRocketIdx >= 3) {
-    if (gameDone) {
-      runEvolution(() => { clearInterval(hintTimer); onWin(); });
-    } else {
-      runEvolution(() => startFight(() => { clearInterval(hintTimer); loadRound(); }));
-    }
+    const afterGym = () => {
+      if (gameDone) { clearInterval(hintTimer); onWin(); }
+      else startFight(() => { clearInterval(hintTimer); loadRound(); });
+    };
+    if (currentEvo) runEvolution(afterGym);
+    else afterGym();
     return;
   }
   if (gameDone) { onWin(); return; }
@@ -1292,8 +1356,8 @@ function triggerPokemonAttack() {
 
   pokeRocketIdx++;
 
-  // Next round — a wild pokémon appears first (capture chance)
-  setTimeout(startWildEncounter, 1800);
+  // Gym defeated → wild pokémon encounter (grass stage); otherwise straight to the next round
+  setTimeout(pokeRocketIdx >= 3 ? startWildEncounter : proceedNextRound, 1800);
 }
 
 function onWin() {
@@ -1305,6 +1369,7 @@ function onWin() {
 
 function restartGame() {
   phase = 1; roundInPhase = 0; score = 0; pokeRocketIdx = 3; oppBag = [];
+  gameStartedFlag = true;
   document.getElementById('winOverlay').classList.remove('active');
   startFight(() => {
     loadRound();
@@ -1329,6 +1394,7 @@ function startGame() {
   document.getElementById('startOverlay').classList.add('hidden');
   initAudio();
   oppBag = [];
+  gameStartedFlag = true;
   startFight(() => {
     phase = 1; roundInPhase = 0; score = 0;
     document.getElementById('winOverlay').classList.remove('active');
@@ -1336,17 +1402,16 @@ function startGame() {
   });
 }
 
-// Set images on page load (hidden until start)
-currentPoke = EVOLUTIONS[0];
-currentEvo = { name: EVOLUTIONS[0].evoName, file: EVOLUTIONS[0].evoFile };
+// Set images on page load (hidden until start) — the player always begins with Pikachu
+setActivePoke('pikachu.png');
 currentOpp = OPPONENTS[0];
-setPokeImage(currentPoke);
 buildOppRow();
 
 // Wild encounter + pokédex buttons
 document.getElementById('ballBtn').addEventListener('click', startCaptureChallenge);
 document.getElementById('wildSkip').addEventListener('click', endWildEncounter);
 document.getElementById('dexClose').addEventListener('click', closeDex);
+document.getElementById('dexHudBtn').addEventListener('click', openDex);
 document.getElementById('dexDetail').addEventListener('click', function(e) {
   if (e.target === this) closeDexDetail();
 });
