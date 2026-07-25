@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="expires" content="0">
 <title>Joga com Neo — Números</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -403,6 +406,74 @@
     border-bottom: 3px solid rgba(0,0,0,0.12);
   }
 
+  /* Wild encounter (overlay inside arena only) */
+  .wild-overlay {
+    position: absolute; inset: 0;
+    display: none; align-items: center; justify-content: center;
+    z-index: 8; pointer-events: none; border-radius: 12px;
+  }
+  .wild-overlay.active { display: flex; background: rgba(26,13,60,0.42); }
+  .wild-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: all; }
+  .wild-img { width: clamp(96px, 23vw, 150px); height: clamp(96px, 23vw, 150px); object-fit: contain;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); animation: wildIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes wildIn { 0%{transform:scale(0.2) translateY(40px);opacity:0} 100%{transform:scale(1) translateY(0);opacity:1} }
+  .wild-label { color:#fff; font-weight:800; font-size:clamp(14px,3.2vw,19px); text-shadow:0 2px 0 rgba(0,0,0,0.45); }
+  .wild-hint { color:#ffe259; font-weight:800; font-size:clamp(11px,2.4vw,14px); text-shadow:0 2px 0 rgba(0,0,0,0.45); }
+  .wild-controls { display: flex; align-items: center; gap: 14px; }
+  .ball-btn { background:none; border:none; cursor:pointer; padding:6px; animation:ballPulse 1.4s ease-in-out infinite; }
+  .ball-btn img { width:clamp(62px,14vw,88px); height:clamp(62px,14vw,88px); }
+  @keyframes ballPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+  .wild-skip { background:rgba(0,0,0,0.45); color:#fff; border:2px solid rgba(255,255,255,0.55); border-radius:999px;
+    padding:8px 16px; font-family:inherit; font-weight:800; font-size:clamp(11px,2.4vw,14px); cursor:pointer; }
+
+  /* thrown ball + catch FX (fixed: flies across the screen) */
+  .thrown-ball { position: fixed; z-index: 120; width: 64px; height: 64px; pointer-events: none;
+    transition: left 0.5s cubic-bezier(0.3,1.3,0.6,1), top 0.5s cubic-bezier(0.3,1.3,0.6,1); }
+  .thrown-ball.wiggle { animation: ballWiggle 0.45s ease-in-out 3; }
+  @keyframes ballWiggle { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-18deg)} 75%{transform:rotate(18deg)} }
+  .catch-star { position: fixed; z-index: 121; font-size: 26px; pointer-events: none; animation: starPop 0.8s ease forwards; }
+  @keyframes starPop { 0%{transform:scale(0.2);opacity:1} 100%{transform:scale(1.7) translateY(-46px);opacity:0} }
+  .wild-img.into-ball { transition: all 0.4s; transform: scale(0); opacity: 0; }
+  .wild-img.flee { transition: all 0.5s; transform: translateX(140%) scale(0.6); opacity: 0; }
+
+  /* Pokédex */
+  .dex-overlay { position: absolute; inset: 0; z-index: 180; display: none; flex-direction: column;
+    background: linear-gradient(180deg,#6c5ce7 0%,#a55eea 45%,#fd79a8 100%); }
+  .dex-overlay.active { display: flex; }
+  .dex-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px 6px; }
+  .dex-title { color:#fff; font-weight:800; font-size:clamp(18px,5vw,26px); text-shadow:0 2px 0 rgba(0,0,0,0.2); }
+  .dex-count { color:#ffe259; font-weight:800; font-size:clamp(13px,3.4vw,18px); margin-left:8px; }
+  .dex-close { width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,0.92);
+    font-size:20px;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,0.3); }
+  .dex-grid { flex:1; overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr));
+    gap:8px; padding:10px 14px 20px; align-content:start; }
+  .dex-cell { background:rgba(255,255,255,0.14); border-radius:14px; padding:4px; display:flex;
+    flex-direction:column; align-items:center; position:relative; }
+  .dex-cell img { width:100%; aspect-ratio:1; object-fit:contain; }
+  .dex-cell .dex-num { color:rgba(255,255,255,0.75); font-size:10px; font-weight:700; }
+  .dex-cell.uncaught img { filter:brightness(0); opacity:0.45; }
+  .dex-cell.caught { background:rgba(255,226,89,0.28); border:2px solid #ffe259; cursor:pointer; }
+  .dex-cell .dex-x { position:absolute; top:2px; right:4px; background:#ffe259; color:#5b3a00;
+    border-radius:999px; font-size:10px; font-weight:800; padding:1px 6px; }
+  .dex-detail { position:absolute; inset:0; z-index:190; display:none; align-items:center; justify-content:center;
+    background:rgba(15,10,40,0.72); padding:20px; }
+  .dex-detail.active { display:flex; }
+  .dex-card { background:linear-gradient(180deg,#ffffff,#f3edff); border-radius:24px; padding:18px 22px; width:min(92%,340px);
+    display:flex; flex-direction:column; align-items:center; box-shadow:0 12px 40px rgba(0,0,0,0.4); max-height:92%; overflow-y:auto; }
+  .dex-card img { width:clamp(120px,32vw,160px); height:clamp(120px,32vw,160px); object-fit:contain; }
+  .dex-card .dc-name { font-size:24px; font-weight:800; color:#4a3a8c; }
+  .dex-card .dc-num { font-size:13px; font-weight:700; color:#9b8cc4; }
+  .dc-types { display:flex; gap:6px; margin:6px 0 10px; }
+  .dc-type { background:#6c5ce7; color:#fff; border-radius:999px; padding:3px 12px; font-size:12px; font-weight:700; }
+  .dc-stat { width:100%; display:flex; align-items:center; gap:8px; margin:3px 0; }
+  .dc-stat .dc-label { width:74px; font-size:12px; font-weight:700; color:#4a3a8c; text-align:right; }
+  .dc-stat .dc-barbg { flex:1; height:12px; background:#e4ddf5; border-radius:999px; overflow:hidden; }
+  .dc-stat .dc-bar { height:100%; background:linear-gradient(90deg,#55efc4,#00b894); border-radius:999px; }
+  .dc-stat .dc-val { width:30px; font-size:12px; font-weight:800; color:#4a3a8c; }
+  .dc-close { margin-top:12px; border:none; border-radius:999px; padding:10px 30px; font-family:inherit;
+    font-weight:800; font-size:16px; color:#5b3a00; background:linear-gradient(180deg,#ffe259,#ffa751);
+    box-shadow:0 4px 0 #d9820f; cursor:pointer; }
+
   @media (max-width: 400px) {
     .slot { width: clamp(36px,12vw,48px); height: clamp(42px,14vw,54px); font-size: 22px; }
     .num-tile { width: clamp(34px,11vw,44px); height: clamp(38px,12vw,48px); font-size: 18px; }
@@ -449,6 +520,18 @@
         <div class="char-label" id="oppName">Team Rocket</div>
       </div>
     </div>
+    <!-- Wild encounter overlay (arena only) -->
+    <div class="wild-overlay" id="wildOverlay">
+      <div class="wild-wrap">
+        <img class="wild-img" id="wildImg" src="" alt="">
+        <div class="wild-label" id="wildLabel"></div>
+        <div class="wild-controls">
+          <button class="ball-btn" id="ballBtn"><img src="assets/pokeball.png" alt="Pokébola"></button>
+          <button class="wild-skip" id="wildSkip">Deixar ir →</button>
+        </div>
+        <div class="wild-hint" id="wildHint">Toca na Pokébola!</div>
+      </div>
+    </div>
   </div>
 
   <!-- Slots -->
@@ -470,6 +553,19 @@
     <h2>🏆 Parabéns!</h2>
     <div class="sub">Completaste todos os números!</div>
     <button onclick="restartGame()">Jogar outra vez →</button>
+    <button onclick="openDex()" style="margin-top:10px">📖 POKÉDEX</button>
+  </div>
+
+  <!-- Pokédex overlay -->
+  <div class="dex-overlay" id="dexOverlay">
+    <div class="dex-head">
+      <div><span class="dex-title">Pokédex</span><span class="dex-count" id="dexCount"></span></div>
+      <button class="dex-close" id="dexClose">✕</button>
+    </div>
+    <div class="dex-grid" id="dexGrid"></div>
+  </div>
+  <div class="dex-detail" id="dexDetail">
+    <div class="dex-card" id="dexCard"></div>
   </div>
 
   <!-- Intro overlay -->
@@ -494,11 +590,13 @@
     <h2>Números</h2>
     <p>Ajuda o Pokémon a vencer os Líderes de Ginásio!</p>
     <button class="start-btn" onclick="startGame()">▶ COMEÇAR</button>
+    <button class="start-btn" onclick="openDex()" style="margin-top:12px">📖 POKÉDEX</button>
   </div>
 </div>
 
 <div class="drag-ghost" id="dragGhost" style="display:none"></div>
 
+<script src="pokedex.js"></script>
 <script>
 
 
@@ -599,6 +697,186 @@ let slotsFilled = 0;
 let totalSlots = 1;
 let hintTimer = null;
 const ROUNDS_PER_PHASE = 10;
+
+// ---------- Pokédex (captured pokémon, persisted) ----------
+const TYPE_EMOJI = {electric:'⚡',fire:'🔥',water:'💧',psychic:'🔮',ghost:'👻',fairy:'✨',dragon:'🐉',normal:'⭐',
+  grass:'🌿',poison:'☠️',flying:'🕊️',bug:'🐛',rock:'🪨',ground:'🟫',steel:'⚙️',ice:'❄️',fighting:'🥊',dark:'🌑'};
+const TYPE_PT = {electric:'Elétrico',fire:'Fogo',water:'Água',psychic:'Psíquico',ghost:'Fantasma',fairy:'Fada',dragon:'Dragão',normal:'Normal',
+  grass:'Relva',poison:'Veneno',flying:'Voador',bug:'Inseto',rock:'Pedra',ground:'Terra',steel:'Aço',ice:'Gelo',fighting:'Luta',dark:'Sombrio'};
+
+let dexCaught = {};
+try { dexCaught = JSON.parse(localStorage.getItem('numeros_dex') || '{}'); } catch(e) {}
+function saveDex() { try { localStorage.setItem('numeros_dex', JSON.stringify(dexCaught)); } catch(e) {} }
+function dexTotal() { return Object.keys(dexCaught).length; }
+
+function openDex() {
+  renderDex();
+  document.getElementById('dexOverlay').classList.add('active');
+}
+function closeDex() {
+  document.getElementById('dexOverlay').classList.remove('active');
+  closeDexDetail();
+}
+function renderDex() {
+  const grid = document.getElementById('dexGrid');
+  grid.innerHTML = '';
+  document.getElementById('dexCount').textContent = dexTotal() + '/' + POKEDEX.length;
+  POKEDEX.forEach(function(p) {
+    const n = dexCaught[p.file] || 0;
+    const cell = document.createElement('div');
+    cell.className = 'dex-cell ' + (n > 0 ? 'caught' : 'uncaught');
+    cell.innerHTML = '<img src="assets/' + p.file + '" alt="">' +
+      '<div class="dex-num">#' + p.id + '</div>' +
+      (n > 1 ? '<div class="dex-x">×' + n + '</div>' : '');
+    if (n > 0) cell.addEventListener('click', function() { openDexDetail(p); });
+    grid.appendChild(cell);
+  });
+}
+function openDexDetail(p) {
+  const n = dexCaught[p.file] || 0;
+  const types = p.types.map(function(t) {
+    return '<span class="dc-type">' + (TYPE_EMOJI[t] || '⭐') + ' ' + (TYPE_PT[t] || t) + '</span>';
+  }).join('');
+  const bar = function(label, v) {
+    return '<div class="dc-stat"><div class="dc-label">' + label + '</div>' +
+      '<div class="dc-barbg"><div class="dc-bar" style="width:' + Math.min(100, Math.round(v / 2)) + '%"></div></div>' +
+      '<div class="dc-val">' + v + '</div></div>';
+  };
+  const card = document.getElementById('dexCard');
+  card.innerHTML = '<img src="assets/' + p.file + '" alt="">' +
+    '<div class="dc-name">' + p.name + '</div>' +
+    '<div class="dc-num">#' + p.id + ' — apanhado ×' + n + '</div>' +
+    '<div class="dc-types">' + types + '</div>' +
+    bar('Ataque', p.atk) + bar('Defesa', p.def) + bar('Veloc.', p.spd) +
+    '<button class="dc-close" id="dcClose">Fechar</button>';
+  document.getElementById('dexDetail').classList.add('active');
+  speak(p.name + '!');
+  document.getElementById('dcClose').addEventListener('click', closeDexDetail);
+}
+function closeDexDetail() {
+  document.getElementById('dexDetail').classList.remove('active');
+}
+
+// ---------- Wild encounter + capture ----------
+let wild = null;          // current wild pokémon (POKEDEX entry)
+let captureMode = false;  // the number challenge on screen is a capture attempt
+let wildTimer = null;
+
+function proceedNextRound() {
+  roundInPhase++;
+  loadRound();
+}
+
+function startWildEncounter() {
+  wild = POKEDEX[Math.floor(Math.random() * POKEDEX.length)];
+  captureMode = false;
+  const wildImg = document.getElementById('wildImg');
+  wildImg.className = 'wild-img';
+  wildImg.src = 'assets/' + wild.file;
+  document.getElementById('wildLabel').textContent = wild.name + ' selvagem!';
+  document.getElementById('ballBtn').style.display = '';
+  document.getElementById('wildSkip').style.display = '';
+  const hint = document.getElementById('wildHint');
+  hint.style.display = '';
+  hint.textContent = 'Toca na Pokébola!';
+  document.getElementById('wildOverlay').classList.add('active');
+  speak('Um ' + wild.name + ' selvagem apareceu! Toca na Pokébola para o apanhares!');
+  clearTimeout(wildTimer);
+  wildTimer = setTimeout(endWildEncounter, 14000); // ignored — it wanders off
+}
+
+function endWildEncounter() {
+  clearTimeout(wildTimer);
+  wild = null;
+  captureMode = false;
+  document.getElementById('wildOverlay').classList.remove('active');
+  proceedNextRound();
+}
+
+function startCaptureChallenge() {
+  if (!wild || captureMode) return;
+  clearTimeout(wildTimer);
+  captureMode = true;
+  document.getElementById('ballBtn').style.display = 'none';
+  document.getElementById('wildHint').textContent = 'Responde bem para o apanhares!';
+  // Number challenge at current phase difficulty — wrong answer = it flees
+  targetNum = phase === 1 ? Math.floor(Math.random() * 10) : 10 + Math.floor(Math.random() * 11);
+  const digits = getNumberDigits(targetNum);
+  totalSlots = digits.length;
+  slotsFilled = 0;
+  document.getElementById('feedbackMsg').textContent = '';
+  buildSlotsAndPool(digits);
+  speakNumber(targetNum);
+  clearInterval(hintTimer);
+  hintTimer = setInterval(() => speakNumber(targetNum), 5000);
+}
+
+function spawnCatchStars(x, y) {
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'catch-star';
+    s.textContent = i % 2 ? '⭐' : '✨';
+    s.style.left = (x + (Math.random() * 120 - 60)) + 'px';
+    s.style.top = (y + (Math.random() * 60 - 30)) + 'px';
+    document.body.appendChild(s);
+    setTimeout(function() { s.remove(); }, 850);
+  }
+}
+
+// Correct answer in capture mode: throw the ball — 70% caught, 30% breaks free
+function runCaptureThrow() {
+  clearInterval(hintTimer);
+  const wp = wild;                       // snapshot — skip/end must not null this mid-flight
+  document.getElementById('wildSkip').style.display = 'none';
+  const wildImg = document.getElementById('wildImg');
+  const wr = wildImg.getBoundingClientRect();
+  const ball = document.createElement('img');
+  ball.src = 'assets/pokeball.png';
+  ball.className = 'thrown-ball';
+  ball.style.left = (window.innerWidth / 2 - 32) + 'px';
+  ball.style.top = (window.innerHeight - 84) + 'px';
+  document.body.appendChild(ball);
+  requestAnimationFrame(function() { requestAnimationFrame(function() {
+    ball.style.left = (wr.left + wr.width / 2 - 32) + 'px';
+    ball.style.top = (wr.top + wr.height / 2 - 32) + 'px';
+  }); });
+  setTimeout(function() {
+    wildImg.classList.add('into-ball');   // pokémon shrinks into the ball
+    sfxCorrect();
+    setTimeout(function() {
+      ball.classList.add('wiggle');        // 3 wiggles (~1.35s)
+      setTimeout(function() {
+        if (Math.random() < 0.7) {
+          dexCaught[wp.file] = (dexCaught[wp.file] || 0) + 1;
+          saveDex();
+          const br = ball.getBoundingClientRect();
+          spawnCatchStars(br.left + 32, br.top + 32);
+          speak('Apanhaste o ' + wp.name + '!');
+          setTimeout(function() { ball.remove(); endWildEncounter(); }, 1700);
+        } else {
+          ball.remove();
+          wildImg.classList.remove('into-ball');
+          speak('Oh não! O ' + wp.name + ' escapou da Pokébola!');
+          setTimeout(function() {
+            wildImg.classList.add('flee');
+            setTimeout(endWildEncounter, 600);
+          }, 1000);
+        }
+      }, 1450);
+    }, 500);
+  }, 550);
+}
+
+// Wrong answer in capture mode: the wild pokémon runs away immediately
+function wildFlees() {
+  clearInterval(hintTimer);
+  sfxWrong();
+  showFeedback('❌', 'fail');
+  const wildImg = document.getElementById('wildImg');
+  wildImg.classList.add('flee');
+  speak('O ' + wild.name + ' fugiu!');
+  setTimeout(endWildEncounter, 1000);
+}
 
 function initAudio() {
   if (audioInit) return;
@@ -858,7 +1136,18 @@ function loadRound() {
   }
   if (gameDone) { onWin(); return; }
 
-  // Build slots
+  buildSlotsAndPool(digits);
+
+  // Speak the number immediately since intro animation already played
+  speakNumber(targetNum);
+
+  // Repeat hint every 5s
+  clearInterval(hintTimer);
+  hintTimer = setInterval(() => speakNumber(targetNum), 5000);
+}
+
+// Build slots + number pool (shared by normal rounds and capture challenges)
+function buildSlotsAndPool(digits) {
   const slotsEl = document.getElementById('slotsContainer');
   slotsEl.innerHTML = '';
   digits.forEach((d) => {
@@ -934,13 +1223,6 @@ function loadRound() {
     });
     pool.appendChild(div);
   });
-
-  // Speak the number immediately since intro animation already played
-  speakNumber(targetNum);
-  
-  // Repeat hint every 5s
-  clearInterval(hintTimer);
-  hintTimer = setInterval(() => speakNumber(targetNum), 5000);
 }
 
 function handleNumberDrop(value, slotEl, sourceEl) {
@@ -965,9 +1247,11 @@ function handleNumberDrop(value, slotEl, sourceEl) {
     document.getElementById('scoreDisplay').textContent = score;
 
     if (slotsFilled === totalSlots) {
-      setTimeout(triggerPokemonAttack, 300);
+      if (captureMode) setTimeout(runCaptureThrow, 300);
+      else setTimeout(triggerPokemonAttack, 300);
     }
   } else {
+    if (captureMode) { wildFlees(); return; }
     slotEl.classList.add('wrong');
     setTimeout(() => slotEl.classList.remove('wrong'), 400);
     sfxWrong();
@@ -1008,11 +1292,8 @@ function triggerPokemonAttack() {
 
   pokeRocketIdx++;
 
-  // Next round
-  setTimeout(() => {
-    roundInPhase++;
-    loadRound();
-  }, 1800);
+  // Next round — a wild pokémon appears first (capture chance)
+  setTimeout(startWildEncounter, 1800);
 }
 
 function onWin() {
@@ -1061,6 +1342,14 @@ currentEvo = { name: EVOLUTIONS[0].evoName, file: EVOLUTIONS[0].evoFile };
 currentOpp = OPPONENTS[0];
 setPokeImage(currentPoke);
 buildOppRow();
+
+// Wild encounter + pokédex buttons
+document.getElementById('ballBtn').addEventListener('click', startCaptureChallenge);
+document.getElementById('wildSkip').addEventListener('click', endWildEncounter);
+document.getElementById('dexClose').addEventListener('click', closeDex);
+document.getElementById('dexDetail').addEventListener('click', function(e) {
+  if (e.target === this) closeDexDetail();
+});
 </script>
 </body>
 </html>
