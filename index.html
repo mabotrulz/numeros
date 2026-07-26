@@ -419,16 +419,14 @@
     display: flex;
     background:
       radial-gradient(ellipse 150px 26px at 50% 90%, rgba(0,60,0,0.22), transparent),
-      repeating-linear-gradient(97deg, rgba(255,255,255,0.06) 0 9px, transparent 9px 24px),
-      repeating-linear-gradient(-83deg, rgba(0,80,0,0.14) 0 5px, transparent 5px 19px),
       linear-gradient(180deg, #aee3ff 0%, #cdeffd 30%, #8fd46f 31%, #66b84a 62%, #4a9c36 100%);
     box-shadow: inset 0 0 40px rgba(0,80,0,0.28);
   }
-  .wild-overlay.compact {
-    position: absolute; border-radius: 12px;
-    border: 3px solid rgba(255,255,255,0.4);
-  }
-  .wild-overlay:not(.compact) .wild-img { width: clamp(150px, 36vw, 240px); height: clamp(150px, 36vw, 240px); }
+  /* Capture challenge: grass stays full-screen, wild pokémon moves up,
+     slots + number pool lift above the grass so they stay usable */
+  .wild-overlay.catch-mode { align-items: flex-start; padding-top: 9vh; }
+  .wild-overlay:not(.catch-mode) .wild-img { width: clamp(150px, 36vw, 240px); height: clamp(150px, 36vw, 240px); }
+  body.catching .slots-area, body.catching .num-pool { z-index: 46; }
   .wild-overlay.active::after {
     content: '🌼  🌿    🌷    🌿  🌼';
     position: absolute; bottom: 4px; left: 0; right: 0;
@@ -840,7 +838,7 @@ function startWildEncounter() {
   wild = POKEDEX[Math.floor(Math.random() * POKEDEX.length)];
   captureMode = false;
   document.getElementById('arena').classList.add('wild-active');
-  document.getElementById('wildOverlay').classList.remove('compact');
+  document.getElementById('wildOverlay').classList.remove('catch-mode');
   const wildImg = document.getElementById('wildImg');
   wildImg.className = 'wild-img';
   wildImg.src = 'assets/' + wild.file;
@@ -862,7 +860,8 @@ function endWildEncounter() {
   captureMode = false;
   document.getElementById('arena').classList.remove('wild-active');
   document.getElementById('wildOverlay').classList.remove('active');
-  document.getElementById('wildOverlay').classList.remove('compact');
+  document.getElementById('wildOverlay').classList.remove('catch-mode');
+  document.body.classList.remove('catching');
   proceedNextRound();
 }
 
@@ -870,8 +869,10 @@ function startCaptureChallenge() {
   if (!wild || captureMode) return;
   clearTimeout(wildTimer);
   captureMode = true;
-  // Shrink the grass stage into the arena so the slots + number pool are usable
-  document.getElementById('wildOverlay').classList.add('compact');
+  // Grass stays full-screen; the wild pokémon moves up and the
+  // slots + number pool lift above the grass so they stay tappable
+  document.getElementById('wildOverlay').classList.add('catch-mode');
+  document.body.classList.add('catching');
   document.getElementById('ballBtn').style.display = 'none';
   document.getElementById('wildHint').textContent = 'Responde bem para o apanhares!';
   // Number challenge at current phase difficulty — wrong answer = it flees
