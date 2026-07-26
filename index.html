@@ -47,6 +47,9 @@
     margin: 0 4px;
     z-index: 2;
   }
+  /* Lift the whole arena stacking context while the wild stage is up,
+     so the full-screen grass paints over the header, slots and number pool */
+  .arena.wild-active { z-index: 45; }
 
   .arena-side {
     position: absolute;
@@ -406,11 +409,11 @@
     border-bottom: 3px solid rgba(0,0,0,0.12);
   }
 
-  /* Wild encounter (overlay inside arena only) */
+  /* Wild encounter (full-screen grass stage; shrinks into the arena for the capture challenge) */
   .wild-overlay {
-    position: absolute; inset: 0;
+    position: fixed; inset: 0;
     display: none; align-items: center; justify-content: center;
-    z-index: 8; pointer-events: none; border-radius: 12px;
+    z-index: 40; pointer-events: none;
   }
   .wild-overlay.active {
     display: flex;
@@ -419,9 +422,13 @@
       repeating-linear-gradient(97deg, rgba(255,255,255,0.06) 0 9px, transparent 9px 24px),
       repeating-linear-gradient(-83deg, rgba(0,80,0,0.14) 0 5px, transparent 5px 19px),
       linear-gradient(180deg, #aee3ff 0%, #cdeffd 30%, #8fd46f 31%, #66b84a 62%, #4a9c36 100%);
-    border: 3px solid rgba(255,255,255,0.4);
     box-shadow: inset 0 0 40px rgba(0,80,0,0.28);
   }
+  .wild-overlay.compact {
+    position: absolute; border-radius: 12px;
+    border: 3px solid rgba(255,255,255,0.4);
+  }
+  .wild-overlay:not(.compact) .wild-img { width: clamp(150px, 36vw, 240px); height: clamp(150px, 36vw, 240px); }
   .wild-overlay.active::after {
     content: '🌼  🌿    🌷    🌿  🌼';
     position: absolute; bottom: 4px; left: 0; right: 0;
@@ -554,10 +561,10 @@
         <img class="wild-img" id="wildImg" src="" alt="">
         <div class="wild-label" id="wildLabel"></div>
         <div class="wild-controls">
-          <button class="ball-btn" id="ballBtn"><img src="assets/pokeball.png" alt="Pokébola"></button>
+          <button class="ball-btn" id="ballBtn"><img src="assets/pokeball.png" alt="Poké Ball"></button>
           <button class="wild-skip" id="wildSkip">Deixar ir →</button>
         </div>
-        <div class="wild-hint" id="wildHint">Toca na Pokébola!</div>
+        <div class="wild-hint" id="wildHint">Toca na Poké Ball!</div>
       </div>
     </div>
   </div>
@@ -832,6 +839,8 @@ function proceedNextRound() {
 function startWildEncounter() {
   wild = POKEDEX[Math.floor(Math.random() * POKEDEX.length)];
   captureMode = false;
+  document.getElementById('arena').classList.add('wild-active');
+  document.getElementById('wildOverlay').classList.remove('compact');
   const wildImg = document.getElementById('wildImg');
   wildImg.className = 'wild-img';
   wildImg.src = 'assets/' + wild.file;
@@ -840,9 +849,9 @@ function startWildEncounter() {
   document.getElementById('wildSkip').style.display = '';
   const hint = document.getElementById('wildHint');
   hint.style.display = '';
-  hint.textContent = 'Toca na Pokébola!';
+  hint.textContent = 'Toca na Poké Ball!';
   document.getElementById('wildOverlay').classList.add('active');
-  speak('Um ' + wild.name + ' selvagem apareceu! Toca na Pokébola para o apanhares!');
+  speak('Um ' + wild.name + ' selvagem apareceu! Toca na Poké Ball para o apanhares!');
   clearTimeout(wildTimer);
   wildTimer = setTimeout(endWildEncounter, 14000); // ignored — it wanders off
 }
@@ -851,7 +860,9 @@ function endWildEncounter() {
   clearTimeout(wildTimer);
   wild = null;
   captureMode = false;
+  document.getElementById('arena').classList.remove('wild-active');
   document.getElementById('wildOverlay').classList.remove('active');
+  document.getElementById('wildOverlay').classList.remove('compact');
   proceedNextRound();
 }
 
@@ -859,6 +870,8 @@ function startCaptureChallenge() {
   if (!wild || captureMode) return;
   clearTimeout(wildTimer);
   captureMode = true;
+  // Shrink the grass stage into the arena so the slots + number pool are usable
+  document.getElementById('wildOverlay').classList.add('compact');
   document.getElementById('ballBtn').style.display = 'none';
   document.getElementById('wildHint').textContent = 'Responde bem para o apanhares!';
   // Number challenge at current phase difficulty — wrong answer = it flees
@@ -918,7 +931,7 @@ function runCaptureThrow() {
         } else {
           ball.remove();
           wildImg.classList.remove('into-ball');
-          speak('Oh não! O ' + wp.name + ' escapou da Pokébola!');
+          speak('Oh não! O ' + wp.name + ' escapou da Poké Ball!');
           setTimeout(function() {
             wildImg.classList.add('flee');
             setTimeout(endWildEncounter, 600);
@@ -1187,15 +1200,11 @@ function loadRound() {
   document.getElementById('roundDisplay').textContent = (roundInPhase + 1) + '/' + ROUNDS_PER_PHASE;
   document.getElementById('feedbackMsg').textContent = '';
 
-  // Fight won → evolve (if the active pokémon can), then start a new fight (or win the game)
+  // Fight won (evolution already happened right after the last attack) → next fight or win
   const gameDone = (phase === 2 && roundInPhase >= ROUNDS_PER_PHASE);
   if (pokeRocketIdx >= 3) {
-    const afterGym = () => {
-      if (gameDone) { clearInterval(hintTimer); onWin(); }
-      else startFight(() => { clearInterval(hintTimer); loadRound(); });
-    };
-    if (currentEvo) runEvolution(afterGym);
-    else afterGym();
+    if (gameDone) { clearInterval(hintTimer); onWin(); }
+    else startFight(() => { clearInterval(hintTimer); loadRound(); });
     return;
   }
   if (gameDone) { onWin(); return; }
@@ -1356,8 +1365,13 @@ function triggerPokemonAttack() {
 
   pokeRocketIdx++;
 
-  // Gym defeated → wild pokémon encounter (grass stage); otherwise straight to the next round
-  setTimeout(pokeRocketIdx >= 3 ? startWildEncounter : proceedNextRound, 1800);
+  // Gym defeated → evolution celebration, then the wild encounter (grass stage)
+  setTimeout(pokeRocketIdx >= 3 ? gymDefeatedFlow : proceedNextRound, 1800);
+}
+
+function gymDefeatedFlow() {
+  if (currentEvo) runEvolution(function() { startWildEncounter(); });
+  else startWildEncounter();
 }
 
 function onWin() {
