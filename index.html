@@ -992,7 +992,11 @@ function speakMix(parts, cb) {
     if (part.en) { u.lang = 'en-US'; if (enVoice) u.voice = enVoice; }
     else { u.lang = 'pt-PT'; }
     u.rate = 0.85; u.pitch = 1.0;
-    u.onend = next; u.onerror = next;
+    // Watchdog: if the engine never fires onend/onerror, advance anyway
+    let done = false;
+    const advance = function() { if (done) return; done = true; clearTimeout(wd); next(); };
+    const wd = setTimeout(advance, text.length * 250 + 2000);
+    u.onend = advance; u.onerror = advance;
     window.speechSynthesis.speak(u);
   }
   next();
