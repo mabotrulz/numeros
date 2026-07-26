@@ -899,7 +899,7 @@ function spawnCatchStars(x, y) {
   }
 }
 
-// Correct answer in capture mode: throw the ball — 70% caught, 30% breaks free
+// Correct answer in capture mode: throw the ball — always caught (100%)
 function runCaptureThrow() {
   clearInterval(hintTimer);
   const wp = wild;                       // snapshot — skip/end must not null this mid-flight
@@ -922,7 +922,7 @@ function runCaptureThrow() {
     setTimeout(function() {
       ball.classList.add('wiggle');        // 3 wiggles (~1.35s)
       setTimeout(function() {
-        if (Math.random() < 0.7) {
+        if (Math.random() < 1) {
           dexCaught[wp.file] = (dexCaught[wp.file] || 0) + 1;
           saveDex();
           const br = ball.getBoundingClientRect();
