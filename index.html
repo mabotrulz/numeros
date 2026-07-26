@@ -809,12 +809,12 @@ function openDexDetail(p) {
     bar('Ataque', p.atk) + bar('Defesa', p.def) + bar('Veloc.', p.spd) +
     '<div>' + swapBtn + '<button class="dc-close" id="dcClose">Fechar</button></div>';
   document.getElementById('dexDetail').classList.add('active');
-  speak(p.name + '!');
+  speakMix([{en: p.name + '!'}]);
   document.getElementById('dcClose').addEventListener('click', closeDexDetail);
   if (swapBtn) {
     document.getElementById('dcSwap').addEventListener('click', function() {
       setActivePoke(p.file);
-      speak(p.name + ', eu escolho-te!');
+      speakMix([{en: p.name}, {pt: ', eu escolho-te!'}]);
       closeDexDetail();
       closeDex();
     });
@@ -849,7 +849,7 @@ function startWildEncounter() {
   hint.style.display = '';
   hint.textContent = 'Toca na Poké Ball!';
   document.getElementById('wildOverlay').classList.add('active');
-  speak('Um ' + wild.name + ' selvagem apareceu! Toca na Poké Ball para o apanhares!');
+  speakMix([{pt: 'Um '}, {en: wild.name}, {pt: ' selvagem apareceu! Toca na Poké Ball para o apanhares!'}]);
   clearTimeout(wildTimer);
   wildTimer = setTimeout(endWildEncounter, 14000); // ignored — it wanders off
 }
@@ -927,12 +927,12 @@ function runCaptureThrow() {
           saveDex();
           const br = ball.getBoundingClientRect();
           spawnCatchStars(br.left + 32, br.top + 32);
-          speak('Apanhaste o ' + wp.name + '!');
+          speakMix([{pt: 'Apanhaste o '}, {en: wp.name + '!'}]);
           setTimeout(function() { ball.remove(); endWildEncounter(); }, 1700);
         } else {
           ball.remove();
           wildImg.classList.remove('into-ball');
-          speak('Oh não! O ' + wp.name + ' escapou da Poké Ball!');
+          speakMix([{pt: 'Oh não! O '}, {en: wp.name}, {pt: ' escapou da Poké Ball!'}]);
           setTimeout(function() {
             wildImg.classList.add('flee');
             setTimeout(endWildEncounter, 600);
@@ -950,7 +950,7 @@ function wildFlees() {
   showFeedback('❌', 'fail');
   const wildImg = document.getElementById('wildImg');
   wildImg.classList.add('flee');
-  speak('O ' + wild.name + ' fugiu!');
+  speakMix([{pt: 'O '}, {en: wild.name}, {pt: ' fugiu!'}]);
   setTimeout(endWildEncounter, 1000);
 }
 
@@ -973,6 +973,29 @@ function speak(text, cb) {
   u.onend = () => { if(cb) cb(); };
   u.onerror = () => { if(cb) cb(); };
   window.speechSynthesis.speak(u);
+}
+
+// Mixed-language speech: Portuguese sentence, pokémon names in English.
+// parts: array of {pt:'texto'} and/or {en:'Name'}
+function speakMix(parts, cb) {
+  if (!window.speechSynthesis) { if(cb) cb(); return; }
+  window.speechSynthesis.cancel();
+  const voices = window.speechSynthesis.getVoices();
+  const enVoice = voices.find(v => /^en([-_]|$)/i.test(v.lang)) || null;
+  let i = 0;
+  function next() {
+    if (i >= parts.length) { if (cb) cb(); return; }
+    const part = parts[i++];
+    const text = part.en || part.pt || '';
+    if (!text) { next(); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    if (part.en) { u.lang = 'en-US'; if (enVoice) u.voice = enVoice; }
+    else { u.lang = 'pt-PT'; }
+    u.rate = 0.85; u.pitch = 1.0;
+    u.onend = next; u.onerror = next;
+    window.speechSynthesis.speak(u);
+  }
+  next();
 }
 
 function speakNumber(n) {
@@ -1080,12 +1103,12 @@ function runEvolution(callback) {
   document.getElementById('evoName').textContent = 'O ' + currentPoke.name + ' está a evoluir…';
   overlay.classList.remove('evolving');
   overlay.classList.add('active');
-  speak('O ' + currentPoke.name + ' está a evoluir!');
+  speakMix([{pt: 'O '}, {en: currentPoke.name}, {pt: ' está a evoluir!'}]);
   setTimeout(function() {
     overlay.classList.add('evolving');
     sfxCorrect();
     document.getElementById('evoName').textContent = currentPoke.name + ' evoluiu para ' + currentEvo.name + '!';
-    setTimeout(function() { speak(currentEvo.name + '!'); }, 600);
+    setTimeout(function() { speakMix([{en: currentEvo.name + '!'}]); }, 600);
     setTimeout(function() {
       overlay.classList.remove('active');
       overlay.classList.remove('evolving');
