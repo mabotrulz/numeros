@@ -235,6 +235,41 @@
     80% { transform: translate(3px, 2px); }
   }
 
+  /* Epic full-screen attack FX (rare + 3rd-evolution pokémon) */
+  .epic-fx { position: fixed; inset: 0; z-index: 125; pointer-events: none; overflow: hidden; }
+  .epic-wave {
+    position: absolute; left: 0; width: 100%;
+    font-size: clamp(30px, 8vw, 64px); white-space: nowrap; line-height: 1.1;
+  }
+  @keyframes waveRise { 0% { transform: translateY(0); } 100% { transform: translateY(-135vh); } }
+  @keyframes waveFall { 0% { transform: translateY(0); } 100% { transform: translateY(135vh); } }
+  .epic-flash { position: absolute; inset: 0; opacity: 0; animation: epicFlash 0.9s ease; }
+  @keyframes epicFlash {
+    0%, 100% { opacity: 0; }
+    15% { opacity: 0.55; } 30% { opacity: 0.12; } 45% { opacity: 0.4; } 60% { opacity: 0; }
+  }
+  .epic-bolt {
+    position: absolute; font-size: clamp(34px, 9vw, 72px);
+    animation: boltPop 0.7s ease forwards; opacity: 0;
+  }
+  @keyframes boltPop {
+    0% { transform: scale(0.2) rotate(-12deg); opacity: 0; }
+    25% { transform: scale(1.3) rotate(8deg); opacity: 1; }
+    55% { transform: scale(1) rotate(-6deg); opacity: 1; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
+  .epic-drop {
+    position: absolute; top: -12%; font-size: clamp(28px, 7vw, 56px);
+    animation-name: dropFall; animation-timing-function: ease-in; animation-fill-mode: forwards;
+  }
+  @keyframes dropFall { 0% { transform: translateY(0) rotate(0); } 100% { transform: translateY(130vh) rotate(340deg); } }
+  .epic-ring {
+    position: absolute; width: 16px; height: 16px; border-radius: 50%;
+    border: 5px solid; transform: translate(-50%, -50%);
+    animation: epicRing 0.8s ease-out forwards;
+  }
+  @keyframes epicRing { 0% { width: 16px; height: 16px; opacity: 1; } 100% { width: 220px; height: 220px; opacity: 0; } }
+
   /* Master Ball button + win reward */
   .ball-btn.master { position: relative; }
   .mb-count {
@@ -752,6 +787,14 @@ const EVOLUTIONS = [
 // Files that are evolved forms — harder to catch with a standard ball
 const EVO_FILES = new Set();
 EVOLUTIONS.forEach(e => { if (e.evos) e.evos.forEach(x => EVO_FILES.add(x.file)); else EVO_FILES.add(e.evoFile); });
+
+// Epic attackers: legendaries/rares + final (3rd-stage) evolutions get screen-filling FX
+const EPIC_FILES = new Set([
+  'mew.png','mewtwo.png','articuno.png','zapdos.png','moltres.png','dragonite.png',
+  'venusaur.png','charizard.png','blastoise.png','butterfree.png','beedrill.png',
+  'pidgeot.png','vileplume.png','poliwrath.png','alakazam.png','machamp.png',
+  'victreebel.png','golem.png','nidoking.png','nidoqueen.png'
+]);
 
 // Opponents: gym leaders with their pokémon (+ Team Rocket)
 const OPPONENTS = [
@@ -1430,6 +1473,91 @@ function handleNumberDrop(value, slotEl, sourceEl) {
   }
 }
 
+// Phone rumble (Android Chrome/Firefox; iOS Safari ignores navigator.vibrate)
+function rumble(pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch(e) {} }
+
+// Epic full-screen attack FX for rare + 3rd-evolution pokémon
+function epicAttackFX(type) {
+  const fx = document.createElement('div');
+  fx.className = 'epic-fx';
+  document.body.appendChild(fx);
+  setTimeout(() => fx.remove(), 1900);
+  const rnd = (a, b) => a + Math.random() * (b - a);
+
+  function wave(emoji, dir, glow) {
+    // Full-width band sweeping the whole screen (bottom→top or top→bottom)
+    for (let row = 0; row < 2; row++) {
+      const w = document.createElement('div');
+      w.className = 'epic-wave';
+      w.style.textShadow = glow;
+      w.style.top = dir === 'up' ? (100 + row * 12) + '%' : (-30 - row * 12) + '%';
+      w.style.animation = (dir === 'up' ? 'waveRise' : 'waveFall') + ' 1.15s ' + (row * 0.08) + 's linear forwards';
+      w.textContent = (emoji + ' ').repeat(14);
+      fx.appendChild(w);
+    }
+  }
+  function bolts(emoji, color) {
+    // Shocks scattered all around the screen + a coloured screen flash
+    const fl = document.createElement('div');
+    fl.className = 'epic-flash';
+    fl.style.background = color;
+    fx.appendChild(fl);
+    for (let i = 0; i < 9; i++) {
+      const b = document.createElement('div');
+      b.className = 'epic-bolt';
+      b.textContent = emoji;
+      b.style.left = rnd(4, 86) + '%';
+      b.style.top = rnd(4, 82) + '%';
+      b.style.animationDelay = (i * 0.07) + 's';
+      fx.appendChild(b);
+    }
+  }
+  function rain(emoji, n) {
+    // Things dropping from the top of the screen
+    for (let i = 0; i < (n || 8); i++) {
+      const d = document.createElement('div');
+      d.className = 'epic-drop';
+      d.textContent = emoji;
+      d.style.left = rnd(3, 92) + '%';
+      d.style.animationDuration = rnd(0.7, 1.2) + 's';
+      d.style.animationDelay = (i * 0.06) + 's';
+      fx.appendChild(d);
+    }
+  }
+  function rings(color, n) {
+    // Pulses expanding at scattered spots (psychic-style)
+    for (let i = 0; i < (n || 6); i++) {
+      const r = document.createElement('div');
+      r.className = 'epic-ring';
+      r.style.borderColor = color;
+      r.style.left = rnd(12, 88) + '%';
+      r.style.top = rnd(12, 84) + '%';
+      r.style.animationDelay = (i * 0.1) + 's';
+      fx.appendChild(r);
+    }
+  }
+
+  switch (type) {
+    case 'fire':     wave('🔥', 'up', '0 0 18px #ff6a00'); rumble([60, 40, 120]); break;
+    case 'water':    wave('🌊', 'down', '0 0 18px #2196f3'); rumble([100, 60, 60]); break;
+    case 'electric': bolts('⚡', 'rgba(255,235,59,0.8)'); rumble([30, 30, 30, 30, 90]); break;
+    case 'psychic':  rings('#c26bff'); bolts('🔮', 'rgba(194,107,255,0.55)'); rumble([50, 50, 50, 50, 50]); break;
+    case 'rock':     rain('🪨'); rumble([120, 50, 120]); break;
+    case 'ground':   rain('🟫'); rumble([120, 50, 120]); break;
+    case 'ice':      rain('❄️', 10); rumble([40, 40, 80]); break;
+    case 'grass':    rain('🍃', 10); rumble([40, 40, 80]); break;
+    case 'ghost':    bolts('👻', 'rgba(90,40,140,0.7)'); rings('#7e57c2', 4); rumble([70, 70, 70]); break;
+    case 'dragon':   wave('🐉', 'up', '0 0 18px #ff3d00'); rumble([150]); break;
+    case 'fairy':    rings('#ff9ff3', 8); bolts('✨', 'rgba(255,159,243,0.55)'); rumble([30, 30, 60]); break;
+    case 'dark':     bolts('🌑', 'rgba(20,10,40,0.8)'); rumble([90, 60, 90]); break;
+    case 'steel':    rain('⚙️'); rumble([60, 40, 60]); break;
+    case 'fighting': bolts('💥', 'rgba(255,87,34,0.7)'); rumble([80, 40, 80, 40, 80]); break;
+    case 'flying':   wave('🌪️', 'up', '0 0 14px #b0bec5'); rumble([50, 50, 100]); break;
+    case 'bug':      rain('🐛', 9); rumble([40, 40, 40]); break;
+    default:         rings('#ffe082', 7); rumble([60, 40, 60]); break;
+  }
+}
+
 function triggerPokemonAttack() {
   // Multi-type pokémon use a random type on each attack
   const types = (currentPoke.types && currentPoke.types.length) ? currentPoke.types : ['normal'];
@@ -1442,6 +1570,10 @@ function triggerPokemonAttack() {
   // Clear old hint when attack starts
   clearInterval(hintTimer);
   sfxBlast();
+
+  // Rare + 3rd-evolution pokémon get screen-filling FX + rumble; others a light tap
+  if (EPIC_FILES.has(currentPoke.file)) epicAttackFX(type);
+  else rumble(40);
 
   // Attacker lunges with its type animation
   pokeImg.className = 'char-img poke-img ' + effect.cls;
