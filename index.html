@@ -197,35 +197,9 @@
     100% { transform: translateX(80px) translateY(-300px) scale(0.2) rotate(30deg); opacity: 0; }
   }
 
-  /* Attack FX: particle volley + impact + arena shake */
-  .attack-particle {
-    position: fixed; z-index: 130; pointer-events: none;
-    font-size: clamp(26px, 6vw, 44px);
-    margin-left: -0.5em; margin-top: -0.5em;
-  }
-  .attack-impact {
-    position: fixed; z-index: 131; pointer-events: none;
-    font-size: clamp(42px, 10vw, 84px);
-    transform: translate(-50%, -50%);
-    animation: impactPop 0.5s ease forwards;
-  }
-  @keyframes impactPop {
-    0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
-    60% { transform: translate(-50%, -50%) scale(1.6); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; }
-  }
-  .attack-ring {
-    position: fixed; z-index: 130; pointer-events: none;
-    width: 14px; height: 14px;
-    border: 4px solid rgba(255, 255, 190, 0.95);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    animation: ringExpand 0.55s ease-out forwards;
-  }
-  @keyframes ringExpand {
-    0% { width: 14px; height: 14px; opacity: 1; }
-    100% { width: 170px; height: 170px; opacity: 0; }
-  }
+  /* Attack FX: everything is drawn procedurally on canvas — no emoji sprites */
+  .fx-canvas { position: fixed; inset: 0; z-index: 125; pointer-events: none; }
+
   .arena.shake { animation: arenaShake 0.4s ease; }
   @keyframes arenaShake {
     0%, 100% { transform: translate(0, 0); }
@@ -234,41 +208,6 @@
     60% { transform: translate(-4px, -2px); }
     80% { transform: translate(3px, 2px); }
   }
-
-  /* Epic full-screen attack FX (rare + 3rd-evolution pokémon) */
-  .epic-fx { position: fixed; inset: 0; z-index: 125; pointer-events: none; overflow: hidden; }
-  .epic-wave {
-    position: absolute; left: 0; width: 100%;
-    font-size: clamp(30px, 8vw, 64px); white-space: nowrap; line-height: 1.1;
-  }
-  @keyframes waveRise { 0% { transform: translateY(0); } 100% { transform: translateY(-135vh); } }
-  @keyframes waveFall { 0% { transform: translateY(0); } 100% { transform: translateY(135vh); } }
-  .epic-flash { position: absolute; inset: 0; opacity: 0; animation: epicFlash 0.9s ease; }
-  @keyframes epicFlash {
-    0%, 100% { opacity: 0; }
-    15% { opacity: 0.55; } 30% { opacity: 0.12; } 45% { opacity: 0.4; } 60% { opacity: 0; }
-  }
-  .epic-bolt {
-    position: absolute; font-size: clamp(34px, 9vw, 72px);
-    animation: boltPop 0.7s ease forwards; opacity: 0;
-  }
-  @keyframes boltPop {
-    0% { transform: scale(0.2) rotate(-12deg); opacity: 0; }
-    25% { transform: scale(1.3) rotate(8deg); opacity: 1; }
-    55% { transform: scale(1) rotate(-6deg); opacity: 1; }
-    100% { transform: scale(1.4); opacity: 0; }
-  }
-  .epic-drop {
-    position: absolute; top: -12%; font-size: clamp(28px, 7vw, 56px);
-    animation-name: dropFall; animation-timing-function: ease-in; animation-fill-mode: forwards;
-  }
-  @keyframes dropFall { 0% { transform: translateY(0) rotate(0); } 100% { transform: translateY(130vh) rotate(340deg); } }
-  .epic-ring {
-    position: absolute; width: 16px; height: 16px; border-radius: 50%;
-    border: 5px solid; transform: translate(-50%, -50%);
-    animation: epicRing 0.8s ease-out forwards;
-  }
-  @keyframes epicRing { 0% { width: 16px; height: 16px; opacity: 1; } 100% { width: 220px; height: 220px; opacity: 0; } }
 
   /* Master Ball button + win reward */
   .ball-btn.master { position: relative; }
@@ -707,25 +646,25 @@
 <script>
 
 
-const TYPE_EFFECTS = {
-  electric: { emoji:'⚡', cls:'attack-electric' },
-  fire:     { emoji:'🔥', cls:'attack-fire' },
-  water:    { emoji:'💧', cls:'attack-water' },
-  psychic:  { emoji:'🔮', cls:'attack-psychic' },
-  ghost:    { emoji:'👻', cls:'attack-ghost' },
-  fairy:    { emoji:'✨', cls:'attack-fairy' },
-  dragon:   { emoji:'🐉', cls:'attack-dragon' },
-  normal:   { emoji:'💥', cls:'attack-normal' },
-  grass:    { emoji:'🌿', cls:'attack-fairy' },
-  poison:   { emoji:'☠️', cls:'attack-ghost' },
-  flying:   { emoji:'🕊️', cls:'attack-water' },
-  bug:      { emoji:'🐛', cls:'attack-normal' },
-  rock:     { emoji:'🪨', cls:'attack-dragon' },
-  ground:   { emoji:'🟫', cls:'attack-normal' },
-  steel:    { emoji:'⚙️', cls:'attack-dragon' },
-  ice:      { emoji:'❄️', cls:'attack-psychic' },
-  fighting: { emoji:'🥊', cls:'attack-normal' },
-  dark:     { emoji:'🌑', cls:'attack-ghost' },
+const TYPE_FX = {
+  electric: { cls:'attack-electric', core:'#ffffff', mid:'#ffee58', edge:'#8f7bff' },
+  fire:     { cls:'attack-fire',     core:'#fff6c8', mid:'#ffb03a', edge:'#ff4d00' },
+  water:    { cls:'attack-water',    core:'#e3f4ff', mid:'#4fc3f7', edge:'#1565c0' },
+  psychic:  { cls:'attack-psychic',  core:'#f3d1ff', mid:'#c26bff', edge:'#7b1fa2' },
+  ghost:    { cls:'attack-ghost',    core:'#e1bee7', mid:'#8e24aa', edge:'#4a148c' },
+  fairy:    { cls:'attack-fairy',    core:'#ffe3f4', mid:'#ff8fd6', edge:'#e91e63' },
+  dragon:   { cls:'attack-dragon',   core:'#d7fff2', mid:'#34d399', edge:'#0f766e' },
+  normal:   { cls:'attack-normal',   core:'#fff8e1', mid:'#ffd54f', edge:'#ff8f00' },
+  grass:    { cls:'attack-fairy',    core:'#e8ffd9', mid:'#7ed957', edge:'#2e7d32' },
+  poison:   { cls:'attack-ghost',    core:'#f3d1ff', mid:'#ab47bc', edge:'#4a148c' },
+  flying:   { cls:'attack-water',    core:'#ffffff', mid:'#b0bec5', edge:'#607d8b' },
+  bug:      { cls:'attack-normal',   core:'#f1ffb0', mid:'#aeea00', edge:'#558b2f' },
+  rock:     { cls:'attack-dragon',   core:'#e8e0d5', mid:'#a1887f', edge:'#5d4037' },
+  ground:   { cls:'attack-normal',   core:'#f0e2c8', mid:'#c9a06a', edge:'#795548' },
+  steel:    { cls:'attack-dragon',   core:'#f5f7fa', mid:'#b0bec5', edge:'#546e7a' },
+  ice:      { cls:'attack-psychic',  core:'#ffffff', mid:'#b3e5fc', edge:'#0288d1' },
+  fighting: { cls:'attack-normal',   core:'#ffe7d1', mid:'#ff8a50', edge:'#d84315' },
+  dark:     { cls:'attack-ghost',    core:'#cbb8ff', mid:'#5e35b1', edge:'#120024' },
 };
 
 // Left-side pokémon: always start at BASE form, evolve after each fight
@@ -1476,93 +1415,398 @@ function handleNumberDrop(value, slotEl, sourceEl) {
 // Phone rumble (Android Chrome/Firefox; iOS Safari ignores navigator.vibrate)
 function rumble(pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch(e) {} }
 
-// Epic full-screen attack FX for rare + 3rd-evolution pokémon
-function epicAttackFX(type) {
-  const fx = document.createElement('div');
-  fx.className = 'epic-fx';
-  document.body.appendChild(fx);
-  setTimeout(() => fx.remove(), 1900);
-  const rnd = (a, b) => a + Math.random() * (b - a);
+// ---------- Canvas attack FX engine (everything drawn, no emoji sprites) ----------
+function hexA(hex, a) {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
 
-  function wave(emoji, dir, glow) {
-    // Full-width band sweeping the whole screen (bottom→top or top→bottom)
-    for (let row = 0; row < 2; row++) {
-      const w = document.createElement('div');
-      w.className = 'epic-wave';
-      w.style.textShadow = glow;
-      w.style.top = dir === 'up' ? (100 + row * 12) + '%' : (-30 - row * 12) + '%';
-      w.style.animation = (dir === 'up' ? 'waveRise' : 'waveFall') + ' 1.15s ' + (row * 0.08) + 's linear forwards';
-      w.textContent = (emoji + ' ').repeat(14);
-      fx.appendChild(w);
+function runFx(render, duration) {
+  const c = document.createElement('canvas');
+  c.className = 'fx-canvas';
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  c.width = Math.round(window.innerWidth * dpr);
+  c.height = Math.round(window.innerHeight * dpr);
+  document.body.appendChild(c);
+  const ctx = c.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = window.innerWidth, H = window.innerHeight, t0 = performance.now();
+  (function frame(now) {
+    const el = now - t0;
+    ctx.clearRect(0, 0, W, H);
+    render(ctx, W, H, el / 1000, Math.min(1, el / duration));
+    if (el < duration) requestAnimationFrame(frame);
+    else c.remove();
+  })(t0);
+}
+
+function waveY(x, t, a1, f1, s1, a2, f2, s2) {
+  return a1 * Math.sin(x * f1 + t * s1) + a2 * Math.sin(x * f2 - t * s2);
+}
+
+// One cohesive wall of flame with a noise-shaped front, rising bottom → top
+function flameWall(pal) {
+  return function(ctx, W, H, t, p) {
+    const front = H + 60 - p * (H + 340);
+    ctx.globalAlpha = p > 0.85 ? (1 - p) / 0.15 : 1;
+    const body = ctx.createLinearGradient(0, front - 40, 0, H);
+    body.addColorStop(0, pal.core);
+    body.addColorStop(0.15, pal.mid);
+    body.addColorStop(0.55, pal.edge);
+    body.addColorStop(1, pal.deep);
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(0, H + 2);
+    for (let x = 0; x <= W; x += 10) ctx.lineTo(x, front + waveY(x, t, 22, 0.018, 6.5, 12, 0.043, 10));
+    ctx.lineTo(W, H + 2);
+    ctx.closePath();
+    ctx.fill();
+    // bright tongues licking above the front line
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 22; i++) {
+      const x = ((i + 0.5) / 22) * W + Math.sin(i * 12.9898) * 22;
+      const fl = 0.5 + 0.5 * Math.sin(t * 13 + i * 2.4);
+      const base = front + waveY(x, t, 22, 0.018, 6.5, 12, 0.043, 10);
+      const th = 30 + 70 * fl;
+      const tg = ctx.createLinearGradient(0, base - th, 0, base);
+      tg.addColorStop(0, 'rgba(255,255,255,0)');
+      tg.addColorStop(1, pal.tongue);
+      ctx.fillStyle = tg;
+      ctx.beginPath();
+      ctx.ellipse(x, base - th * 0.45, 8 + 9 * fl, th * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  };
+}
+
+// One cohesive sheet of water with a foam crest, falling top → bottom
+function waterSheet() {
+  return function(ctx, W, H, t, p) {
+    const surf = -60 + p * (H + 320);
+    ctx.globalAlpha = p > 0.85 ? (1 - p) / 0.15 : 1;
+    const body = ctx.createLinearGradient(0, 0, 0, surf + 40);
+    body.addColorStop(0, 'rgba(13,71,161,0.8)');
+    body.addColorStop(0.65, 'rgba(41,152,240,0.85)');
+    body.addColorStop(1, 'rgba(200,235,255,0.95)');
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(0, -2);
+    ctx.lineTo(0, surf + waveY(0, t, 12, 0.02, 6, 6, 0.05, 9));
+    for (let x = 0; x <= W; x += 10) ctx.lineTo(x, surf + waveY(x, t, 12, 0.02, 6, 6, 0.05, 9));
+    ctx.lineTo(W, -2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 10) {
+      const y = surf + waveY(x, t, 12, 0.02, 6, 6, 0.05, 9) + 6;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  };
+}
+
+// Real jagged lightning bolts converging on the target + screen flash
+function lightningStorm(tx, ty) {
+  const bolts = [Math.random(), Math.random(), Math.random(), Math.random()];
+  function boltPath(ctx, x0, y0, x1, y1, rough) {
+    const segs = 14;
+    ctx.moveTo(x0, y0);
+    for (let i = 1; i < segs; i++) {
+      const f = i / segs;
+      ctx.lineTo(x0 + (x1 - x0) * f + (Math.random() - 0.5) * rough,
+                 y0 + (y1 - y0) * f + (Math.random() - 0.5) * rough * 0.6);
+    }
+    ctx.lineTo(x1, y1);
   }
-  function bolts(emoji, color) {
-    // Shocks scattered all around the screen + a coloured screen flash
-    const fl = document.createElement('div');
-    fl.className = 'epic-flash';
-    fl.style.background = color;
-    fx.appendChild(fl);
+  return function(ctx, W, H, t, p) {
+    const blink = Math.max(0, Math.sin(p * Math.PI * 4)) * 0.35 * (1 - p);
+    ctx.fillStyle = 'rgba(255,255,200,' + blink + ')';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = p < 0.75 ? 1 : (1 - p) / 0.25;
+    bolts.forEach(function(seed, i) {
+      if (Math.sin(t * 45 + seed * 40) < -0.55) return; // flicker
+      const sx = seed * W, sy = -10;
+      ctx.shadowColor = '#fff59d'; ctx.shadowBlur = 16;
+      ctx.strokeStyle = 'rgba(159,139,255,0.85)'; ctx.lineWidth = 7;
+      ctx.beginPath(); boltPath(ctx, sx, sy, tx, ty, 46); ctx.stroke();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.2;
+      ctx.beginPath(); boltPath(ctx, sx, sy, tx, ty, 46); ctx.stroke();
+      ctx.shadowBlur = 0;
+    });
+    ctx.globalAlpha = 1;
+  };
+}
+
+// Concentric pulse rings from several centres (psychic / fairy / normal)
+function pulseRings(c1, c2) {
+  const centers = [];
+  for (let i = 0; i < 3; i++) centers.push({ x: 0.2 + 0.3 * i + (Math.random() - 0.5) * 0.08, y: 0.25 + Math.random() * 0.5 });
+  return function(ctx, W, H, t, p) {
+    const maxR = Math.max(W, H) * 0.35;
+    centers.forEach(function(cn, ci) {
+      for (let k = 0; k < 4; k++) {
+        const f = (p * 1.4 + k * 0.22 + ci * 0.1) % 1;
+        ctx.globalAlpha = (1 - f) * (p > 0.85 ? (1 - p) / 0.15 : 1);
+        ctx.strokeStyle = k % 2 ? c1 : c2;
+        ctx.lineWidth = 5 - f * 3;
+        ctx.shadowColor = c2; ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(cn.x * W, cn.y * H, f * maxR, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    });
+    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+  };
+}
+
+function makeVerts(nv) {
+  const v = [];
+  for (let i = 0; i < nv; i++) {
+    const a = (i / nv) * Math.PI * 2, r = 0.7 + Math.random() * 0.45;
+    v.push([Math.cos(a) * r, Math.sin(a) * r]);
+  }
+  return v;
+}
+
+function drawShape(ctx, kind, s, pal, verts, t) {
+  if (kind === 'rock') {
+    const g = ctx.createLinearGradient(-s, -s, s, s);
+    g.addColorStop(0, pal.core); g.addColorStop(1, pal.edge);
+    ctx.fillStyle = g; ctx.strokeStyle = pal.edge; ctx.lineWidth = 2;
+    ctx.beginPath();
+    verts.forEach(function(v, i) { if (i) ctx.lineTo(v[0] * s, v[1] * s); else ctx.moveTo(v[0] * s, v[1] * s); });
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else if (kind === 'snow') {
+    ctx.strokeStyle = pal.mid; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    ctx.shadowColor = pal.core; ctx.shadowBlur = 8;
+    for (let i = 0; i < 6; i++) {
+      ctx.rotate(Math.PI / 3);
+      ctx.beginPath();
+      ctx.moveTo(0, 0); ctx.lineTo(0, -s);
+      ctx.moveTo(0, -s * 0.55); ctx.lineTo(s * 0.28, -s * 0.75);
+      ctx.moveTo(0, -s * 0.55); ctx.lineTo(-s * 0.28, -s * 0.75);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+  } else if (kind === 'leaf') {
+    ctx.fillStyle = pal.mid; ctx.strokeStyle = pal.edge; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, -s);
+    ctx.quadraticCurveTo(s * 0.9, -s * 0.2, 0, s);
+    ctx.quadraticCurveTo(-s * 0.9, -s * 0.2, 0, -s);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -s * 0.8); ctx.lineTo(0, s * 0.8); ctx.stroke();
+  } else if (kind === 'bug') {
+    ctx.fillStyle = pal.edge;
+    ctx.beginPath(); ctx.ellipse(0, 0, s * 0.55, s * 0.75, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = pal.mid;
+    ctx.beginPath(); ctx.ellipse(0, -s * 0.15, s * 0.35, s * 0.45, 0, 0, Math.PI * 2); ctx.fill();
+    const w = 0.4 + 0.6 * Math.abs(Math.sin(t * 30));
+    ctx.strokeStyle = 'rgba(255,255,255,' + (0.5 * w) + ')'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(-s * 0.9, -s * 0.5 * w);
+    ctx.moveTo(0, 0); ctx.lineTo(s * 0.9, -s * 0.5 * w);
+    ctx.stroke();
+  } else if (kind === 'spark') {
+    ctx.fillStyle = pal.core; ctx.shadowColor = pal.mid; ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(0, -s);
+    ctx.quadraticCurveTo(s * 0.16, -s * 0.16, s, 0);
+    ctx.quadraticCurveTo(s * 0.16, s * 0.16, 0, s);
+    ctx.quadraticCurveTo(-s * 0.16, s * 0.16, -s, 0);
+    ctx.quadraticCurveTo(-s * 0.16, -s * 0.16, 0, -s);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// Shapes tumbling down from the top (rocks, snowflakes, leaves, bugs, sparkles)
+function rainShapes(kind, pal, n) {
+  const items = [];
+  for (let i = 0; i < (n || 8); i++) items.push({
+    x: Math.random(), delay: i * 0.06 + Math.random() * 0.08, speed: 0.85 + Math.random() * 0.5,
+    rot: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 6,
+    size: 13 + Math.random() * 15, sway: Math.random() * Math.PI * 2, verts: makeVerts(7)
+  });
+  return function(ctx, W, H, t, p) {
+    items.forEach(function(it) {
+      const f = (t - it.delay) * it.speed / 1.1;
+      if (f < 0 || f > 1.15) return;
+      ctx.save();
+      ctx.translate(it.x * W + Math.sin(t * 2 + it.sway) * 14, -40 + f * (H + 120));
+      ctx.rotate(it.rot + t * it.spin);
+      drawShape(ctx, kind, it.size, pal, it.verts, t);
+      ctx.restore();
+    });
+  };
+}
+
+// Glowing wisps rising with wavy tails + dark vignette (ghost / dark)
+function ghostWisps(vig, core, mid, tail) {
+  const wisps = [];
+  for (let i = 0; i < 7; i++) wisps.push({
+    x: Math.random(), speed: 0.7 + Math.random() * 0.5, size: 16 + Math.random() * 18,
+    phase: Math.random() * Math.PI * 2, delay: i * 0.08
+  });
+  return function(ctx, W, H, t, p) {
+    ctx.fillStyle = vig + (0.28 * Math.sin(Math.min(1, p) * Math.PI)) + ')';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    wisps.forEach(function(w) {
+      const f = (t - w.delay) * w.speed / 1.3;
+      if (f < 0 || f > 1.1) return;
+      const y = H + 40 - f * (H + 160);
+      const x = w.x * W + Math.sin(t * 3 + w.phase) * 26;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, w.size);
+      g.addColorStop(0, core);
+      g.addColorStop(0.5, mid);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, w.size, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = tail; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x, y + w.size * 0.5);
+      for (let k = 1; k <= 6; k++) ctx.lineTo(x + Math.sin(t * 6 + w.phase + k) * 8, y + w.size * 0.5 + k * 9);
+      ctx.stroke();
+    });
+    ctx.globalCompositeOperation = 'source-over';
+  };
+}
+
+// Spinning vortex sweeping across the screen (flying)
+function vortex() {
+  return function(ctx, W, H, t, p) {
+    const cx = W * (1.15 - p * 1.3), cy = H * 0.5;
+    ctx.globalAlpha = p > 0.85 ? (1 - p) / 0.15 : 1;
     for (let i = 0; i < 9; i++) {
-      const b = document.createElement('div');
-      b.className = 'epic-bolt';
-      b.textContent = emoji;
-      b.style.left = rnd(4, 86) + '%';
-      b.style.top = rnd(4, 82) + '%';
-      b.style.animationDelay = (i * 0.07) + 's';
-      fx.appendChild(b);
+      const f = i / 9;
+      ctx.strokeStyle = 'rgba(236,244,255,' + (0.75 - f * 0.5) + ')';
+      ctx.lineWidth = 6 - f * 3.5; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(cx + Math.sin(i * 3.3) * 12, cy, 30 + f * H * 0.45, t * 9 + i * 0.9, t * 9 + i * 0.9 + Math.PI * 0.9);
+      ctx.stroke();
     }
-  }
-  function rain(emoji, n) {
-    // Things dropping from the top of the screen
-    for (let i = 0; i < (n || 8); i++) {
-      const d = document.createElement('div');
-      d.className = 'epic-drop';
-      d.textContent = emoji;
-      d.style.left = rnd(3, 92) + '%';
-      d.style.animationDuration = rnd(0.7, 1.2) + 's';
-      d.style.animationDelay = (i * 0.06) + 's';
-      fx.appendChild(d);
-    }
-  }
-  function rings(color, n) {
-    // Pulses expanding at scattered spots (psychic-style)
-    for (let i = 0; i < (n || 6); i++) {
-      const r = document.createElement('div');
-      r.className = 'epic-ring';
-      r.style.borderColor = color;
-      r.style.left = rnd(12, 88) + '%';
-      r.style.top = rnd(12, 84) + '%';
-      r.style.animationDelay = (i * 0.1) + 's';
-      fx.appendChild(r);
-    }
-  }
+    ctx.globalAlpha = 1;
+  };
+}
 
-  switch (type) {
-    case 'fire':     wave('🔥', 'up', '0 0 18px #ff6a00'); rumble([60, 40, 120]); break;
-    case 'water':    wave('🌊', 'down', '0 0 18px #2196f3'); rumble([100, 60, 60]); break;
-    case 'electric': bolts('⚡', 'rgba(255,235,59,0.8)'); rumble([30, 30, 30, 30, 90]); break;
-    case 'psychic':  rings('#c26bff'); bolts('🔮', 'rgba(194,107,255,0.55)'); rumble([50, 50, 50, 50, 50]); break;
-    case 'rock':     rain('🪨'); rumble([120, 50, 120]); break;
-    case 'ground':   rain('🟫'); rumble([120, 50, 120]); break;
-    case 'ice':      rain('❄️', 10); rumble([40, 40, 80]); break;
-    case 'grass':    rain('🍃', 10); rumble([40, 40, 80]); break;
-    case 'ghost':    bolts('👻', 'rgba(90,40,140,0.7)'); rings('#7e57c2', 4); rumble([70, 70, 70]); break;
-    case 'dragon':   wave('🐉', 'up', '0 0 18px #ff3d00'); rumble([150]); break;
-    case 'fairy':    rings('#ff9ff3', 8); bolts('✨', 'rgba(255,159,243,0.55)'); rumble([30, 30, 60]); break;
-    case 'dark':     bolts('🌑', 'rgba(20,10,40,0.8)'); rumble([90, 60, 90]); break;
-    case 'steel':    rain('⚙️'); rumble([60, 40, 60]); break;
-    case 'fighting': bolts('💥', 'rgba(255,87,34,0.7)'); rumble([80, 40, 80, 40, 80]); break;
-    case 'flying':   wave('🌪️', 'up', '0 0 14px #b0bec5'); rumble([50, 50, 100]); break;
-    case 'bug':      rain('🐛', 9); rumble([40, 40, 40]); break;
-    default:         rings('#ffe082', 7); rumble([60, 40, 60]); break;
+function star8(ctx, s) {
+  ctx.beginPath();
+  for (let i = 0; i < 16; i++) {
+    const r = i % 2 ? s * 0.45 : s, a = (i / 16) * Math.PI * 2;
+    if (i) ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); else ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
   }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+
+// Sequential impact starbursts across the screen (fighting)
+function starPunches(pal, n) {
+  const pts = [];
+  for (let i = 0; i < n; i++) pts.push({ x: 0.15 + Math.random() * 0.7, y: 0.2 + Math.random() * 0.55, at: i * 0.14 });
+  return function(ctx, W, H, t, p) {
+    pts.forEach(function(pt) {
+      const f = (p - pt.at) / 0.18;
+      if (f < 0 || f > 1) return;
+      ctx.save();
+      ctx.translate(pt.x * W, pt.y * H); ctx.rotate(f * 0.6);
+      ctx.globalAlpha = 1 - f;
+      ctx.fillStyle = pal.core; ctx.strokeStyle = pal.edge; ctx.lineWidth = 3;
+      ctx.shadowColor = pal.mid; ctx.shadowBlur = 14;
+      star8(ctx, 12 + f * 46);
+      ctx.restore();
+    });
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  };
+}
+
+function combineFx(list) {
+  return function(ctx, W, H, t, p) { list.forEach(function(r) { r(ctx, W, H, t, p); }); };
+}
+
+// Epic full-screen attack FX for rare + 3rd-evolution pokémon — all custom drawn
+function epicAttackFX(type, tx, ty) {
+  let render;
+  switch (type) {
+    case 'fire':
+      render = flameWall({ core:'rgba(255,246,200,0.95)', mid:'rgba(255,154,42,0.9)', edge:'rgba(255,77,0,0.8)', deep:'rgba(110,18,0,0.85)', tongue:'rgba(255,224,130,0.8)' });
+      break;
+    case 'dragon':
+      render = flameWall({ core:'rgba(215,255,242,0.95)', mid:'rgba(52,211,153,0.9)', edge:'rgba(15,118,110,0.85)', deep:'rgba(4,60,50,0.85)', tongue:'rgba(178,255,230,0.8)' });
+      break;
+    case 'water':    render = waterSheet(); break;
+    case 'electric': render = lightningStorm(tx, ty); break;
+    case 'psychic':  render = pulseRings('#e1bee7', '#ab47bc'); break;
+    case 'fairy':    render = combineFx([pulseRings('#ffd1ec', '#ff8fd6'), rainShapes('spark', { core:'#fff0fa', mid:'#ff9fd8' }, 12)]); break;
+    case 'rock':     render = rainShapes('rock', { core:'#cfc4b5', edge:'#5d4037' }, 9); break;
+    case 'ground':   render = rainShapes('rock', { core:'#e6d3ae', edge:'#6d4c41' }, 10); break;
+    case 'steel':    render = rainShapes('rock', { core:'#eceff1', edge:'#546e7a' }, 8); break;
+    case 'ice':      render = rainShapes('snow', { core:'#ffffff', mid:'#b3e5fc' }, 12); break;
+    case 'grass':    render = rainShapes('leaf', { mid:'#7ed957', edge:'#2e7d32' }, 12); break;
+    case 'bug':      render = rainShapes('bug', { mid:'#aeea00', edge:'#33691e' }, 10); break;
+    case 'ghost':    render = ghostWisps('rgba(30,0,60,', 'rgba(216,180,255,0.9)', 'rgba(142,36,170,0.55)', 'rgba(186,104,200,0.5)'); break;
+    case 'dark':     render = ghostWisps('rgba(5,0,20,', 'rgba(120,90,220,0.85)', 'rgba(60,20,120,0.6)', 'rgba(90,50,160,0.5)'); break;
+    case 'flying':   render = vortex(); break;
+    case 'fighting': render = starPunches({ core:'#fff1e0', mid:'#ff9e66', edge:'#d84315' }, 5); break;
+    default:         render = pulseRings('#fff3c8', '#ffd54f'); break;
+  }
+  runFx(render, 1500);
+}
+
+// Standard attack: a single glowing comet streaking into the target (drawn, no emoji)
+function projectileFX(type, x0, y0, x1, y1) {
+  const P = TYPE_FX[type] || TYPE_FX.normal;
+  runFx(function(ctx, W, H, t, p) {
+    const x = x0 + (x1 - x0) * p;
+    const y = y0 + (y1 - y0) * p + Math.sin(p * Math.PI) * -46;
+    ctx.lineCap = 'round';
+    for (let k = 1; k <= 10; k++) {
+      const f = p - k * 0.02;
+      if (f <= 0) break;
+      const f2 = Math.max(0, f - 0.02);
+      ctx.strokeStyle = hexA(P.mid, 0.5 * (1 - k / 11));
+      ctx.lineWidth = 12 * (1 - k / 12);
+      ctx.beginPath();
+      ctx.moveTo(x0 + (x1 - x0) * f, y0 + (y1 - y0) * f + Math.sin(f * Math.PI) * -46);
+      ctx.lineTo(x0 + (x1 - x0) * f2, y0 + (y1 - y0) * f2 + Math.sin(f2 * Math.PI) * -46);
+      ctx.stroke();
+    }
+    ctx.shadowColor = P.mid; ctx.shadowBlur = 22;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 16);
+    g.addColorStop(0, P.core); g.addColorStop(1, hexA(P.mid, 0));
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }, 460);
+}
+
+// Drawn impact starburst + ring where the attack lands
+function impactBurstFX(type, x, y) {
+  const P = TYPE_FX[type] || TYPE_FX.normal;
+  runFx(function(ctx, W, H, t, p) {
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(p * 0.5);
+    ctx.globalAlpha = 1 - p;
+    ctx.fillStyle = P.core; ctx.strokeStyle = P.edge; ctx.lineWidth = 3;
+    ctx.shadowColor = P.mid; ctx.shadowBlur = 18;
+    star8(ctx, 14 + p * 54);
+    ctx.restore();
+    ctx.globalAlpha = (1 - p) * 0.9;
+    ctx.strokeStyle = P.core; ctx.lineWidth = 4;
+    ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(x, y, 10 + p * 90, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }, 500);
 }
 
 function triggerPokemonAttack() {
   // Multi-type pokémon use a random type on each attack
   const types = (currentPoke.types && currentPoke.types.length) ? currentPoke.types : ['normal'];
   const type = types[Math.floor(Math.random() * types.length)];
-  const effect = TYPE_EFFECTS[type] || TYPE_EFFECTS.normal;
+  const fx = TYPE_FX[type] || TYPE_FX.normal;
   const pokeImg = document.getElementById('pokeImg');
   const arena = document.getElementById('arena');
   const target = document.getElementById('oppMember' + pokeRocketIdx);
@@ -1571,56 +1815,31 @@ function triggerPokemonAttack() {
   clearInterval(hintTimer);
   sfxBlast();
 
-  // Rare + 3rd-evolution pokémon get screen-filling FX + rumble; others a light tap
-  if (EPIC_FILES.has(currentPoke.file)) epicAttackFX(type);
-  else rumble(40);
-
-  // Attacker lunges with its type animation
-  pokeImg.className = 'char-img poke-img ' + effect.cls;
-  setTimeout(() => { pokeImg.className = 'char-img poke-img'; }, 600);
-
-  // Particle volley: a burst of type-emoji projectiles arcs into the target
   const pr = pokeImg.getBoundingClientRect();
   const tr = target ? target.getBoundingClientRect() : null;
   const fromX = pr.left + pr.width / 2, fromY = pr.top + pr.height / 2;
   const toX = tr ? tr.left + tr.width / 2 : fromX + 220;
   const toY = tr ? tr.top + tr.height / 2 : fromY;
-  for (let i = 0; i < 6; i++) {
-    const p = document.createElement('div');
-    p.className = 'attack-particle';
-    p.textContent = effect.emoji;
-    p.style.left = fromX + 'px';
-    p.style.top = fromY + 'px';
-    document.body.appendChild(p);
-    const dx = toX - fromX + (Math.random() * 44 - 22);
-    const dy = toY - fromY + (Math.random() * 44 - 22);
-    const midX = dx * 0.5;
-    const midY = dy * 0.5 - (40 + Math.random() * 60); // arc over the top
-    const dur = 380 + i * 60, delay = i * 45;
-    p.animate([
-      { transform: 'translate(0,0) scale(0.4) rotate(0deg)', opacity: 1 },
-      { transform: 'translate(' + midX + 'px,' + midY + 'px) scale(1.15) rotate(' + ((Math.random() * 160 - 80) | 0) + 'deg)', opacity: 1, offset: 0.55 },
-      { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.3) rotate(' + ((Math.random() * 240 - 120) | 0) + 'deg)', opacity: 0.9 }
-    ], { duration: dur, delay: delay, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' });
-    setTimeout(() => p.remove(), dur + delay + 80);
+
+  // Rare + 3rd-evolution pokémon: full-screen custom FX + rapid rumble bursts.
+  // Others: a single drawn comet streak + light double-tap.
+  if (EPIC_FILES.has(currentPoke.file)) {
+    epicAttackFX(type, toX, toY);
+    rumble([50, 40, 50, 40, 50, 40, 120]);
+    setTimeout(() => rumble([40, 30, 40, 30, 90]), 500);
+  } else {
+    projectileFX(type, fromX, fromY, toX, toY);
+    rumble([25, 35, 25]);
   }
 
-  // Impact on the target: flash + expanding ring + arena shake
+  // Attacker lunges with its type animation
+  pokeImg.className = 'char-img poke-img ' + fx.cls;
+  setTimeout(() => { pokeImg.className = 'char-img poke-img'; }, 600);
+
+  // Impact on the target: drawn starburst + arena shake
   setTimeout(() => {
     if (!tr) return;
-    const flash = document.createElement('div');
-    flash.className = 'attack-impact';
-    flash.textContent = '💥';
-    flash.style.left = toX + 'px';
-    flash.style.top = toY + 'px';
-    document.body.appendChild(flash);
-    setTimeout(() => flash.remove(), 520);
-    const ring = document.createElement('div');
-    ring.className = 'attack-ring';
-    ring.style.left = toX + 'px';
-    ring.style.top = toY + 'px';
-    document.body.appendChild(ring);
-    setTimeout(() => ring.remove(), 570);
+    impactBurstFX(type, toX, toY);
     arena.classList.add('shake');
     setTimeout(() => arena.classList.remove('shake'), 420);
   }, 430);
