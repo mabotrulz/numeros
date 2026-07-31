@@ -1444,8 +1444,9 @@ function waveY(x, t, a1, f1, s1, a2, f2, s2) {
   return a1 * Math.sin(x * f1 + t * s1) + a2 * Math.sin(x * f2 - t * s2);
 }
 
-// One cohesive wall of flame with a noise-shaped front, rising bottom → top
-function flameWall(pal) {
+// One cohesive wall of flame with a noise-shaped front, rising bottom → top.
+// Erupts on the enemy once the front reaches them.
+function flameWall(pal, tx, ty) {
   return function(ctx, W, H, t, p) {
     const front = H + 60 - p * (H + 340);
     ctx.globalAlpha = p > 0.85 ? (1 - p) / 0.15 : 1;
@@ -1476,13 +1477,35 @@ function flameWall(pal) {
       ctx.ellipse(x, base - th * 0.45, 8 + 9 * fl, th * 0.5, 0, 0, Math.PI * 2);
       ctx.fill();
     }
+    // eruption where the wall engulfs the enemy
+    if (front < ty) {
+      const eng = Math.min(1, (ty - front) / 120);
+      const g = ctx.createRadialGradient(tx, ty, 0, tx, ty, 30 + 90 * eng);
+      g.addColorStop(0, 'rgba(255,240,180,' + 0.9 * eng + ')');
+      g.addColorStop(1, 'rgba(255,90,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(tx, ty, 30 + 90 * eng, 0, Math.PI * 2); ctx.fill();
+      for (let i = 0; i < 6; i++) {
+        const x = tx - 42 + i * 17;
+        const fl = 0.6 + 0.4 * Math.sin(t * 15 + i * 2.1);
+        const th = (36 + 44 * fl) * eng;
+        const tg2 = ctx.createLinearGradient(0, ty - th, 0, ty + 8);
+        tg2.addColorStop(0, 'rgba(255,255,220,0)');
+        tg2.addColorStop(1, pal.tongue);
+        ctx.fillStyle = tg2;
+        ctx.beginPath();
+        ctx.ellipse(x, ty - th * 0.4, 7 + 6 * fl, th * 0.55, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
   };
 }
 
-// One cohesive sheet of water with a foam crest, falling top → bottom
-function waterSheet() {
+// One cohesive sheet of water with a foam crest, falling top → bottom.
+// Splashes on the enemy when the surface reaches them.
+function waterSheet(tx, ty) {
   return function(ctx, W, H, t, p) {
     const surf = -60 + p * (H + 320);
     ctx.globalAlpha = p > 0.85 ? (1 - p) / 0.15 : 1;
@@ -1506,6 +1529,26 @@ function waterSheet() {
       if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
+    // splash on the enemy when the sheet reaches them
+    if (surf >= ty - 10) {
+      const eng = Math.min(1, (surf - ty + 10) / 90);
+      ctx.strokeStyle = 'rgba(255,255,255,' + 0.9 * eng + ')';
+      for (let i = 0; i < 7; i++) {
+        const a = -Math.PI * (0.15 + 0.7 * i / 6);
+        const r = (30 + i * 9) * eng;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(tx, ty + 6);
+        ctx.quadraticCurveTo(tx + Math.cos(a) * r * 0.6, ty + Math.sin(a) * r * 0.8,
+                             tx + Math.cos(a) * r, ty + 6 + Math.sin(a) * r * 0.4 + r * 0.35);
+        ctx.stroke();
+      }
+      const g = ctx.createRadialGradient(tx, ty, 0, tx, ty, 60 * eng + 20);
+      g.addColorStop(0, 'rgba(220,242,255,' + 0.7 * eng + ')');
+      g.addColorStop(1, 'rgba(41,152,240,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(tx, ty, 60 * eng + 20, 0, Math.PI * 2); ctx.fill();
+    }
     ctx.globalAlpha = 1;
   };
 }
@@ -1542,10 +1585,10 @@ function lightningStorm(tx, ty) {
   };
 }
 
-// Concentric pulse rings from several centres (psychic / fairy / normal)
-function pulseRings(c1, c2) {
-  const centers = [];
-  for (let i = 0; i < 3; i++) centers.push({ x: 0.2 + 0.3 * i + (Math.random() - 0.5) * 0.08, y: 0.25 + Math.random() * 0.5 });
+// Concentric pulse rings — first centre is the enemy, the rest scatter (psychic / fairy / normal)
+function pulseRings(c1, c2, tx, ty) {
+  const centers = [{ x: tx / window.innerWidth, y: ty / window.innerHeight }];
+  for (let i = 0; i < 2; i++) centers.push({ x: 0.25 + 0.4 * i + (Math.random() - 0.5) * 0.08, y: 0.25 + Math.random() * 0.5 });
   return function(ctx, W, H, t, p) {
     const maxR = Math.max(W, H) * 0.35;
     centers.forEach(function(cn, ci) {
@@ -1625,11 +1668,12 @@ function drawShape(ctx, kind, s, pal, verts, t) {
   }
 }
 
-// Shapes tumbling down from the top (rocks, snowflakes, leaves, bugs, sparkles)
-function rainShapes(kind, pal, n) {
+// Shapes tumbling down from the top — half of them aimed onto the enemy (rocks, snowflakes, leaves, bugs, sparkles)
+function rainShapes(kind, pal, n, tx) {
   const items = [];
   for (let i = 0; i < (n || 8); i++) items.push({
-    x: Math.random(), delay: i * 0.06 + Math.random() * 0.08, speed: 0.85 + Math.random() * 0.5,
+    x: (tx && i % 2 === 0) ? Math.min(0.97, Math.max(0.03, tx / window.innerWidth + (Math.random() - 0.5) * 0.12)) : Math.random(),
+    delay: i * 0.06 + Math.random() * 0.08, speed: 0.85 + Math.random() * 0.5,
     rot: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 6,
     size: 13 + Math.random() * 15, sway: Math.random() * Math.PI * 2, verts: makeVerts(7)
   });
@@ -1646,10 +1690,14 @@ function rainShapes(kind, pal, n) {
   };
 }
 
-// Glowing wisps rising with wavy tails + dark vignette (ghost / dark)
-function ghostWisps(vig, core, mid, tail) {
-  const wisps = [];
-  for (let i = 0; i < 7; i++) wisps.push({
+// Glowing wisps rising with wavy tails + dark vignette (ghost / dark).
+// The biggest wisp engulfs the enemy.
+function ghostWisps(vig, core, mid, tail, tx, ty) {
+  const wisps = [{
+    x: Math.min(0.97, Math.max(0.03, tx / window.innerWidth)), speed: 1.0, size: 34,
+    phase: 0, delay: 0, targetY: ty / window.innerHeight
+  }];
+  for (let i = 1; i < 7; i++) wisps.push({
     x: Math.random(), speed: 0.7 + Math.random() * 0.5, size: 16 + Math.random() * 18,
     phase: Math.random() * Math.PI * 2, delay: i * 0.08
   });
@@ -1660,7 +1708,7 @@ function ghostWisps(vig, core, mid, tail) {
     wisps.forEach(function(w) {
       const f = (t - w.delay) * w.speed / 1.3;
       if (f < 0 || f > 1.1) return;
-      const y = H + 40 - f * (H + 160);
+      const y = w.targetY ? (H + 40 - f * (H + 160 - (1 - w.targetY) * H)) : (H + 40 - f * (H + 160));
       const x = w.x * W + Math.sin(t * 3 + w.phase) * 26;
       const g = ctx.createRadialGradient(x, y, 0, x, y, w.size);
       g.addColorStop(0, core);
@@ -1677,8 +1725,8 @@ function ghostWisps(vig, core, mid, tail) {
   };
 }
 
-// Spinning vortex sweeping across the screen (flying)
-function vortex() {
+// Spinning vortex sweeping across the screen — flashes on the enemy as it passes (flying)
+function vortex(tx, ty) {
   return function(ctx, W, H, t, p) {
     const cx = W * (1.15 - p * 1.3), cy = H * 0.5;
     ctx.globalAlpha = p > 0.85 ? (1 - p) / 0.15 : 1;
@@ -1689,6 +1737,19 @@ function vortex() {
       ctx.beginPath();
       ctx.arc(cx + Math.sin(i * 3.3) * 12, cy, 30 + f * H * 0.45, t * 9 + i * 0.9, t * 9 + i * 0.9 + Math.PI * 0.9);
       ctx.stroke();
+    }
+    // impact flash as the vortex passes over the enemy
+    const d = Math.abs(cx - tx);
+    if (d < 110) {
+      const eng = 1 - d / 110;
+      ctx.strokeStyle = 'rgba(255,255,255,' + 0.9 * eng + ')';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(tx, ty, 20 + (1 - eng) * 60, 0, Math.PI * 2); ctx.stroke();
+      const g = ctx.createRadialGradient(tx, ty, 0, tx, ty, 70 * eng + 20);
+      g.addColorStop(0, 'rgba(255,255,255,' + 0.6 * eng + ')');
+      g.addColorStop(1, 'rgba(176,190,197,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(tx, ty, 70 * eng + 20, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1;
   };
@@ -1703,10 +1764,10 @@ function star8(ctx, s) {
   ctx.closePath(); ctx.fill(); ctx.stroke();
 }
 
-// Sequential impact starbursts across the screen (fighting)
-function starPunches(pal, n) {
-  const pts = [];
-  for (let i = 0; i < n; i++) pts.push({ x: 0.15 + Math.random() * 0.7, y: 0.2 + Math.random() * 0.55, at: i * 0.14 });
+// Sequential impact starbursts — the first lands squarely on the enemy (fighting)
+function starPunches(pal, n, tx, ty) {
+  const pts = [{ x: tx / window.innerWidth, y: ty / window.innerHeight, at: 0 }];
+  for (let i = 1; i < n; i++) pts.push({ x: 0.15 + Math.random() * 0.7, y: 0.2 + Math.random() * 0.55, at: i * 0.14 });
   return function(ctx, W, H, t, p) {
     pts.forEach(function(pt) {
       const f = (p - pt.at) / 0.18;
@@ -1727,60 +1788,135 @@ function combineFx(list) {
   return function(ctx, W, H, t, p) { list.forEach(function(r) { r(ctx, W, H, t, p); }); };
 }
 
-// Epic full-screen attack FX for rare + 3rd-evolution pokémon — all custom drawn
+// Epic full-screen attack FX for rare + 3rd-evolution pokémon — all custom drawn,
+// and every one of them visibly strikes the enemy at (tx, ty)
 function epicAttackFX(type, tx, ty) {
   let render;
   switch (type) {
     case 'fire':
-      render = flameWall({ core:'rgba(255,246,200,0.95)', mid:'rgba(255,154,42,0.9)', edge:'rgba(255,77,0,0.8)', deep:'rgba(110,18,0,0.85)', tongue:'rgba(255,224,130,0.8)' });
+      render = flameWall({ core:'rgba(255,246,200,0.95)', mid:'rgba(255,154,42,0.9)', edge:'rgba(255,77,0,0.8)', deep:'rgba(110,18,0,0.85)', tongue:'rgba(255,224,130,0.8)' }, tx, ty);
       break;
     case 'dragon':
-      render = flameWall({ core:'rgba(215,255,242,0.95)', mid:'rgba(52,211,153,0.9)', edge:'rgba(15,118,110,0.85)', deep:'rgba(4,60,50,0.85)', tongue:'rgba(178,255,230,0.8)' });
+      render = flameWall({ core:'rgba(215,255,242,0.95)', mid:'rgba(52,211,153,0.9)', edge:'rgba(15,118,110,0.85)', deep:'rgba(4,60,50,0.85)', tongue:'rgba(178,255,230,0.8)' }, tx, ty);
       break;
-    case 'water':    render = waterSheet(); break;
+    case 'water':    render = waterSheet(tx, ty); break;
     case 'electric': render = lightningStorm(tx, ty); break;
-    case 'psychic':  render = pulseRings('#e1bee7', '#ab47bc'); break;
-    case 'fairy':    render = combineFx([pulseRings('#ffd1ec', '#ff8fd6'), rainShapes('spark', { core:'#fff0fa', mid:'#ff9fd8' }, 12)]); break;
-    case 'rock':     render = rainShapes('rock', { core:'#cfc4b5', edge:'#5d4037' }, 9); break;
-    case 'ground':   render = rainShapes('rock', { core:'#e6d3ae', edge:'#6d4c41' }, 10); break;
-    case 'steel':    render = rainShapes('rock', { core:'#eceff1', edge:'#546e7a' }, 8); break;
-    case 'ice':      render = rainShapes('snow', { core:'#ffffff', mid:'#b3e5fc' }, 12); break;
-    case 'grass':    render = rainShapes('leaf', { mid:'#7ed957', edge:'#2e7d32' }, 12); break;
-    case 'bug':      render = rainShapes('bug', { mid:'#aeea00', edge:'#33691e' }, 10); break;
-    case 'ghost':    render = ghostWisps('rgba(30,0,60,', 'rgba(216,180,255,0.9)', 'rgba(142,36,170,0.55)', 'rgba(186,104,200,0.5)'); break;
-    case 'dark':     render = ghostWisps('rgba(5,0,20,', 'rgba(120,90,220,0.85)', 'rgba(60,20,120,0.6)', 'rgba(90,50,160,0.5)'); break;
-    case 'flying':   render = vortex(); break;
-    case 'fighting': render = starPunches({ core:'#fff1e0', mid:'#ff9e66', edge:'#d84315' }, 5); break;
-    default:         render = pulseRings('#fff3c8', '#ffd54f'); break;
+    case 'psychic':  render = pulseRings('#e1bee7', '#ab47bc', tx, ty); break;
+    case 'fairy':    render = combineFx([pulseRings('#ffd1ec', '#ff8fd6', tx, ty), rainShapes('spark', { core:'#fff0fa', mid:'#ff9fd8' }, 12, tx)]); break;
+    case 'rock':     render = rainShapes('rock', { core:'#cfc4b5', edge:'#5d4037' }, 9, tx); break;
+    case 'ground':   render = rainShapes('rock', { core:'#e6d3ae', edge:'#6d4c41' }, 10, tx); break;
+    case 'steel':    render = rainShapes('rock', { core:'#eceff1', edge:'#546e7a' }, 8, tx); break;
+    case 'ice':      render = rainShapes('snow', { core:'#ffffff', mid:'#b3e5fc' }, 12, tx); break;
+    case 'grass':    render = rainShapes('leaf', { mid:'#7ed957', edge:'#2e7d32' }, 12, tx); break;
+    case 'bug':      render = rainShapes('bug', { mid:'#aeea00', edge:'#33691e' }, 10, tx); break;
+    case 'ghost':    render = ghostWisps('rgba(30,0,60,', 'rgba(216,180,255,0.9)', 'rgba(142,36,170,0.55)', 'rgba(186,104,200,0.5)', tx, ty); break;
+    case 'dark':     render = ghostWisps('rgba(5,0,20,', 'rgba(120,90,220,0.85)', 'rgba(60,20,120,0.6)', 'rgba(90,50,160,0.5)', tx, ty); break;
+    case 'flying':   render = vortex(tx, ty); break;
+    case 'fighting': render = starPunches({ core:'#fff1e0', mid:'#ff9e66', edge:'#d84315' }, 5, tx, ty); break;
+    default:         render = pulseRings('#fff3c8', '#ffd54f', tx, ty); break;
   }
   runFx(render, 1500);
 }
 
-// Standard attack: a single glowing comet streaking into the target (drawn, no emoji)
-function projectileFX(type, x0, y0, x1, y1) {
+// Small type-shaped projectile for regular pokémon — flame, droplet, spark, leaf, pebble…
+const MINI_VERTS = [[1,0],[0.4,0.9],[-0.8,0.6],[-1,-0.3],[-0.2,-1],[0.7,-0.7]];
+const TUMBLE_TYPES = { rock:1, ground:1, steel:1, ice:1, grass:1, bug:1, fairy:1, fighting:1 };
+
+function drawMiniShape(ctx, type, s, t) {
   const P = TYPE_FX[type] || TYPE_FX.normal;
-  runFx(function(ctx, W, H, t, p) {
-    const x = x0 + (x1 - x0) * p;
-    const y = y0 + (y1 - y0) * p + Math.sin(p * Math.PI) * -46;
-    ctx.lineCap = 'round';
-    for (let k = 1; k <= 10; k++) {
-      const f = p - k * 0.02;
-      if (f <= 0) break;
-      const f2 = Math.max(0, f - 0.02);
-      ctx.strokeStyle = hexA(P.mid, 0.5 * (1 - k / 11));
-      ctx.lineWidth = 12 * (1 - k / 12);
-      ctx.beginPath();
-      ctx.moveTo(x0 + (x1 - x0) * f, y0 + (y1 - y0) * f + Math.sin(f * Math.PI) * -46);
-      ctx.lineTo(x0 + (x1 - x0) * f2, y0 + (y1 - y0) * f2 + Math.sin(f2 * Math.PI) * -46);
-      ctx.stroke();
-    }
-    ctx.shadowColor = P.mid; ctx.shadowBlur = 22;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, 16);
-    g.addColorStop(0, P.core); g.addColorStop(1, hexA(P.mid, 0));
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
+  if (type === 'fire' || type === 'dragon') {
+    // little flame teardrop, flickering
+    const fl = 0.85 + 0.3 * Math.sin(t * 25);
+    ctx.shadowColor = P.mid; ctx.shadowBlur = 10;
+    ctx.fillStyle = P.mid;
+    ctx.beginPath();
+    ctx.moveTo(0, -s * fl);
+    ctx.quadraticCurveTo(s * 0.9, -s * 0.1, 0, s * 0.7);
+    ctx.quadraticCurveTo(-s * 0.9, -s * 0.1, 0, -s * fl);
+    ctx.fill();
+    ctx.fillStyle = P.core;
+    ctx.beginPath();
+    ctx.moveTo(0, -s * 0.55 * fl);
+    ctx.quadraticCurveTo(s * 0.45, 0, 0, s * 0.45);
+    ctx.quadraticCurveTo(-s * 0.45, 0, 0, -s * 0.55 * fl);
+    ctx.fill();
     ctx.shadowBlur = 0;
-  }, 460);
+  } else if (type === 'water') {
+    // droplet
+    ctx.shadowColor = P.mid; ctx.shadowBlur = 8;
+    ctx.fillStyle = P.mid;
+    ctx.beginPath();
+    ctx.moveTo(0, -s);
+    ctx.quadraticCurveTo(s * 0.85, 0, 0, s * 0.85);
+    ctx.quadraticCurveTo(-s * 0.85, 0, 0, -s);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath(); ctx.arc(-s * 0.2, s * 0.1, s * 0.22, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  } else if (type === 'electric') {
+    // mini zigzag bolt
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.shadowColor = P.mid; ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.3, -s);
+    ctx.lineTo(s * 0.25, -s * 0.25);
+    ctx.lineTo(-s * 0.2, 0);
+    ctx.lineTo(s * 0.3, s);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  } else if (type === 'ice') {
+    drawShape(ctx, 'snow', s, { core: P.core, mid: P.mid }, null, t);
+  } else if (type === 'grass') {
+    drawShape(ctx, 'leaf', s, { mid: P.mid, edge: P.edge }, null, t);
+  } else if (type === 'bug') {
+    drawShape(ctx, 'bug', s, { mid: P.mid, edge: P.edge }, null, t);
+  } else if (type === 'rock' || type === 'ground' || type === 'steel') {
+    drawShape(ctx, 'rock', s, { core: P.core, edge: P.edge }, MINI_VERTS, t);
+  } else if (type === 'fairy') {
+    drawShape(ctx, 'spark', s, { core: P.core, mid: P.mid }, null, t);
+  } else if (type === 'fighting') {
+    ctx.fillStyle = P.core; ctx.strokeStyle = P.edge; ctx.lineWidth = 2;
+    ctx.shadowColor = P.mid; ctx.shadowBlur = 10;
+    star8(ctx, s);
+    ctx.shadowBlur = 0;
+  } else {
+    // psychic / ghost / poison / dark / flying / normal: glowing orb
+    ctx.shadowColor = P.mid; ctx.shadowBlur = 12;
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s);
+    g.addColorStop(0, P.core);
+    g.addColorStop(0.6, P.mid);
+    g.addColorStop(1, hexA(P.mid, 0));
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// Standard attack: two small type-shaped projectiles arc into the enemy — nothing full-screen
+function projectileFX(type, x0, y0, x1, y1) {
+  runFx(function(ctx, W, H, t, p) {
+    [0, 0.13].forEach(function(off) {
+      const f = (t - off) / 0.42;
+      if (f < 0 || f > 1) return;
+      const x = x0 + (x1 - x0) * f;
+      const y = y0 + (y1 - y0) * f + Math.sin(f * Math.PI) * -34;
+      // faint trailing ghost
+      const fb = Math.max(0, f - 0.09);
+      ctx.globalAlpha = 0.3;
+      ctx.save();
+      ctx.translate(x0 + (x1 - x0) * fb, y0 + (y1 - y0) * fb + Math.sin(fb * Math.PI) * -34);
+      ctx.scale(0.6, 0.6);
+      drawMiniShape(ctx, type, 13, t);
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      // projectile
+      ctx.save();
+      ctx.translate(x, y);
+      if (TUMBLE_TYPES[type]) ctx.rotate(f * 5 + off * 20);
+      drawMiniShape(ctx, type, 13, t);
+      ctx.restore();
+    });
+  }, 620);
 }
 
 // Drawn impact starburst + ring where the attack lands
