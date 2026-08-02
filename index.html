@@ -41,8 +41,8 @@
 
   /* Arena - transparent bg */
   .arena {
-    flex-shrink: 0;
-    height: clamp(220px, 48vw, 340px);
+    flex: 1 1 auto;
+    min-height: clamp(220px, 48vw, 340px);
     position: relative;
     margin: 0 4px;
     z-index: 2;
@@ -250,7 +250,7 @@
 
   /* Slots */
   .slots-area {
-    flex: 2;
+    flex: 0 0 auto;
     display: flex; flex-direction: column;
     justify-content: center; align-items: center;
     padding: 2px 8px;
